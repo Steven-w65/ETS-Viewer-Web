@@ -1,0 +1,45 @@
+# Installed dependencies
+node_modules/
+
+# Production output and tool caches
+dist/
+.vite/
+.vitest/
+.cache/
+*.tsbuildinfo
+
+# Test output
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Local verification files and implementation notes
+.qa/
+.superpowers/
+/docs/superpowers/
+
+# Logs
+logs/
+*.log
+
+# Local environment files; keep shareable examples
+*.local
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Editor and operating-system files
+.idea/
+.vs/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+*.swp
+*.swo
+*~
