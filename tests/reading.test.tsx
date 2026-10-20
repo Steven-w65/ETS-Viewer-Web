@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Reader } from '../src/components/Reader';
 import { Navigation } from '../src/components/Navigation';
@@ -11,7 +11,7 @@ import { choice, dialogue } from './fixtures';
 const q = parseDocument(dialogue, 'bank/paper/content_1/content.json');
 const resources = new ImageResources(new Map());
 describe('answer-first reading', () => {
-  it('keeps key points and group explanation independently collapsed with the first answer visible', () => {
+  it('keeps key points and group explanation independently collapsed with the first answer visible', async () => {
     const picture = parseDocument(
       {
         structure_type: 'collector.picture',
@@ -39,7 +39,7 @@ describe('answer-first reading', () => {
     fireEvent.click(explanation);
     expect(screen.getByText('Original group explanation')).toBeVisible();
     fireEvent.click(points);
-    expect(screen.queryByText('Original key points')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText('Original key points')).not.toBeInTheDocument());
     expect(screen.getByText('Original group explanation')).toBeVisible();
     view.rerender(<Reader key="other-picture" question={picture} resources={resources} />);
     expect(screen.getByRole('button', { name: 'Explanation' })).toHaveAttribute(

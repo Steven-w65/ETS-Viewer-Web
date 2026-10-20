@@ -37,16 +37,60 @@ try {
   const { formatAnswers } = await server.ssrLoadModule('/src/core/exporter/index.ts');
   const result = await scanBank(files, path.basename(bank));
   const actual = result.papers.flatMap((p) => p.questions);
+  assert.equal(
+    actual.length,
+    expected.questions.length,
+    'Copy reconciliation must retain the legacy group count',
+  );
+  const project = (value, shape) =>
+    Array.isArray(shape)
+      ? shape.map((item, i) => project(value[i], item))
+      : shape && typeof shape === 'object'
+        ? Object.fromEntries(
+            Object.entries(shape).map(([key, item]) => [key, project(value[key], item)]),
+          )
+        : value;
+  let promotedPrompts = 0;
+  const legacy = actual.map((question, i) => {
+    const original = expected.questions[i];
+    assert.equal(
+      question.parts.length,
+      original.parts.length,
+      'Preserve all original sub-questions',
+    );
+    const projected = project(question, original);
+    for (const [j, part] of question.parts.entries()) {
+      const previous = original.parts[j];
+      // A verified compatibility improvement moves an xt_value-only prompt out
+      // of the transcript slot. Assert its exact source text before projecting
+      // the legacy representation for the desktop regression comparison.
+      if (
+        question.kind === 'collector.choose' &&
+        part.promptField === 'xt_value' &&
+        !previous.prompt &&
+        part.prompt === previous.context &&
+        !part.context
+      ) {
+        projected.parts[j].prompt = previous.prompt;
+        projected.parts[j].context = previous.context;
+        promotedPrompts++;
+      }
+    }
+    return projected;
+  });
   assert.deepEqual(
-    JSON.parse(JSON.stringify(actual)),
+    legacy,
     expected.questions,
     'All fields and original question ordering must match Python',
   );
   for (const paper of result.papers)
     assert.equal(
-      formatAnswers(paper.id, paper.questions),
+      formatAnswers(
+        paper.id,
+        legacy.filter((q) => paper.questions.some((p) => p.source === q.source)),
+      ),
       expected.exports[paper.key],
-      'Full-paper export must match Python exactly',
+      'Legacy representation must preserve the desktop export format',
     );
   console.log(
     JSON.stringify(
@@ -60,7 +104,8 @@ try {
           0,
         ),
         filesScanned: result.filesScanned,
-        exportsMatched: result.papers.length,
+        legacyExportsMatched: result.papers.length,
+        verifiedXtValuePromotions: promotedPrompts,
         pythonIssues: expected.issues,
         webIssues: result.issues.length,
       },

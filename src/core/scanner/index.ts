@@ -1,9 +1,15 @@
 import type { Bank, Issue, Progress, Question, VirtualFile } from '../../types';
-import { metadataAnswerMap, parseDocument } from '../parser';
+import { metadataAnswerMap, parseDocumentResult } from '../parser';
+import { isObject } from '../parser/utils/validation';
 import { baseName, normalizePath, parentPath, taskFolder } from '../paths';
-import { isRaster, LIMITS, supportAsset } from '../importer';
-import { imageReferences } from '../markup';
-import { imageHeader, resolveImage } from '../images';
+import { LIMITS, supportAsset } from '../importer';
+import { isMediaPath } from '../media/classify';
+import { resolveMedia } from '../media/resolve';
+import { MediaError, mediaError, type ResolvedMedia } from '../media/types';
+import { questionMedia } from '../media/references';
+import { importWarnings, issueMessage } from '../diagnostics';
+import { reconcileCopies } from './copies';
+import { ResourceMetadata } from './metadata';
 const COPIES = ['content.json', 'content2.json', 'info.json'];
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 async function json(blob: Blob): Promise<unknown> {
@@ -13,39 +19,30 @@ async function json(blob: Blob): Promise<unknown> {
     b[0] === 255 && b[1] === 254 ? 'utf-16le' : b[0] === 254 && b[1] === 255 ? 'utf-16be' : 'utf-8';
   return JSON.parse(new TextDecoder(encoding, { fatal: true }).decode(b));
 }
-function allReferences(q: Question): string[] {
-  const strings = [q.context, q.instructions, q.topic, q.explanation, q.keyPoints];
-  const refs = [...q.images];
-  for (const p of q.parts) {
-    refs.push(...p.images);
-    strings.push(
-      p.prompt,
-      p.context,
-      p.translation,
-      p.explanation,
-      ...p.options.map((o) => o.text),
-      ...p.answers.map((a) => a.text),
-    );
-  }
-  return [...refs, ...strings.flatMap(imageReferences)];
-}
 export async function scanBank(
   input: VirtualFile[],
   name: string,
   progress?: (p: Progress) => void,
 ): Promise<Bank> {
-  const issues: Issue[] = [],
+  const diagnostics: Issue[] = [],
     questions: Question[] = [],
     assets = new Map<string, Blob>(),
     files = new Map<string, VirtualFile>();
+  const coverage: NonNullable<Bank['coverage']> = {
+    observed: Object.create(null),
+    successful: 0,
+    partial: 0,
+    unsupported: 0,
+    variants: Object.create(null),
+  };
   if (input.length > LIMITS.entries) throw new Error('Bank entry limit exceeded');
   for (const f of input) {
     const path = normalizePath(f.path);
     if (files.has(path)) throw new Error('Duplicate file path: ' + path);
     files.set(path, { path, blob: f.blob });
-    if (isRaster(path)) assets.set(path, f.blob);
+    if (isMediaPath(path)) assets.set(path, f.blob);
   }
-  // Python os.walk: files in a directory first, then sorted child directories.
+  // Preserve the established directory-first desktop ordering when metadata is unavailable.
   const order = (a: string, b: string): number => {
     const ad = parentPath(a).split('/'),
       bd = parentPath(b).split('/');
@@ -54,9 +51,10 @@ export async function scanBank(
     if (ad.length !== bd.length) return ad.length - bd.length;
     return baseName(a) < baseName(b) ? -1 : baseName(a) > baseName(b) ? 1 : 0;
   };
+  const ordered = [...files.values()].sort((a, b) => order(a.path, b.path));
   const groups = new Map<string, Map<string, VirtualFile>>(),
     others: VirtualFile[] = [];
-  for (const f of [...files.values()].sort((a, b) => order(a.path, b.path))) {
+  for (const f of ordered) {
     const filename = baseName(f.path),
       folder = parentPath(f.path);
     if (COPIES.includes(filename) && !supportAsset(f.path)) {
@@ -64,40 +62,108 @@ export async function scanBank(
       groups.get(folder)!.set(filename, f);
     } else others.push(f);
   }
+  const cache = new Map<string, Promise<unknown>>();
+  const read = (f: VirtualFile) => {
+    if (!cache.has(f.path)) cache.set(f.path, json(f.blob));
+    return cache.get(f.path)!;
+  };
+  const resourceMetadata = new ResourceMetadata(new Set(groups.keys()), diagnostics);
+  // Metadata is inspected as data only; it never chooses a collector parser.
+  for (const f of others) {
+    if (supportAsset(f.path)) continue;
+    try {
+      await resourceMetadata.add(f.path, await read(f));
+    } catch {
+      /* Report malformed files in the normal scan below. */
+    }
+  }
   let done = 0;
   const advance = async (n = 1) => {
     done += n;
     progress?.({ phase: 'Parsing questions...', completed: done, total: files.size });
     if (done % 25 === 0) await new Promise((r) => setTimeout(r, 0));
   };
+  const observed = new Set<string>();
+  const parse = (data: unknown, source: string, metadata?: unknown) => {
+    const type =
+      isObject(data) && typeof data.structure_type === 'string'
+        ? data.structure_type
+        : Array.isArray(data)
+          ? 'collector.choose'
+          : '';
+    const id =
+      isObject(data) &&
+      isObject(data.info) &&
+      (typeof data.info.stid === 'string' || typeof data.info.stid === 'number')
+        ? String(data.info.stid).trim()
+        : '';
+    const result = parseDocumentResult(
+      data,
+      source,
+      metadata,
+      resourceMetadata.options(source, type, id),
+    );
+    diagnostics.push(...result.diagnostics);
+    const observation = parentPath(source) + '/' + type;
+    if (type && !observed.has(observation)) {
+      observed.add(observation);
+      coverage.observed[type] = (coverage.observed[type] || 0) + 1;
+      if (result.diagnostics.some((d) => d.code === 'unsupported_structure'))
+        coverage.unsupported++;
+    }
+    return result;
+  };
+  const failure = (path: string, error: unknown, message: string) =>
+    diagnostics.push({
+      path,
+      message: message + errorText(error),
+      severity: 'error',
+      code: error instanceof SyntaxError ? 'invalid_json' : 'invalid_file',
+    });
   progress?.({ phase: 'Parsing questions...', completed: 0, total: files.size });
   for (const copies of groups.values()) {
     let metadata: unknown;
     const meta = copies.get('info.json');
     if (meta)
       try {
-        metadata = await json(meta.blob);
+        metadata = await read(meta);
         metadataAnswerMap(metadata);
-      } catch (e) {
-        issues.push({ path: meta.path, message: 'Cannot read metadata: ' + errorText(e) });
+      } catch (error) {
+        failure(meta.path, error, 'Cannot read metadata: ');
         metadata = undefined;
       }
-    for (const filename of COPIES) {
+    const candidates: Question[] = [];
+    let partial = false;
+    for (const filename of ['content.json', 'content2.json']) {
       const f = copies.get(filename);
-      if (!f || (filename === 'info.json' && metadata === undefined)) continue;
+      if (!f) continue;
       try {
-        questions.push(
-          parseDocument(filename === 'info.json' ? metadata : await json(f.blob), f.path, metadata),
-        );
-        break;
-      } catch (e) {
-        issues.push({ path: f.path, message: 'Cannot load this copy: ' + errorText(e) });
+        const result = parse(await read(f), f.path, metadata);
+        if (result.question) {
+          candidates.push(result.question);
+          partial ||= result.partial;
+        }
+      } catch (error) {
+        failure(f.path, error, 'Cannot load this copy: ');
       }
+    }
+    if (!candidates.length && meta && metadata !== undefined) {
+      const result = parse(metadata, meta.path, metadata);
+      if (result.question) {
+        candidates.push(result.question);
+        partial ||= result.partial;
+      }
+    }
+    const resolved = reconcileCopies(candidates, diagnostics);
+    questions.push(...resolved);
+    if (resolved.length) {
+      if (partial) coverage.partial++;
+      else coverage.successful++;
     }
     await advance(copies.size);
   }
   for (const f of others) {
-    if (!supportAsset(f.path))
+    if (!supportAsset(f.path) && !resourceMetadata.consumed.has(f.path))
       try {
         const header = new TextDecoder()
           .decode(await f.blob.slice(0, 512).arrayBuffer())
@@ -110,41 +176,94 @@ export async function scanBank(
           throw new Error(
             'Standalone answer cache has no question ID mapping; no answers were assigned',
           );
-        if (/^[{[\ufffd]/.test(header) || /\.json$/i.test(f.path))
-          questions.push(parseDocument(await json(f.blob), f.path));
-        else throw new Error('Unsupported file format; unknown/encrypted data is not decoded');
-      } catch (e) {
-        issues.push({ path: f.path, message: 'Cannot load file: ' + errorText(e) });
+        if (/^[{[\ufffd]/.test(header) || /\.json$/i.test(f.path)) {
+          const result = parse(await read(f), f.path);
+          if (result.question) {
+            questions.push(result.question);
+            if (result.partial) coverage.partial++;
+            else coverage.successful++;
+          }
+        } else throw new Error('Unsupported file format; unknown/encrypted data is not decoded');
+      } catch (error) {
+        failure(f.path, error, 'Cannot load file: ');
       }
     await advance();
   }
-  const papers = new Map<string, Bank['papers'][number]>();
+  const papers = new Map<string, Bank['papers'][number]>(),
+    metadataOrder = new Map<Question, number>();
   for (const q of questions) {
-    const key = taskFolder(q.source);
+    const binding = resourceMetadata.attach(q),
+      key = binding?.key || taskFolder(q.source);
     if (!papers.has(key))
-      papers.set(key, { key, id: baseName(key) || name, questions: [], modified: null });
+      papers.set(key, {
+        key,
+        id: binding?.id || baseName(key) || name,
+        questions: [],
+        modified: null,
+        ...(binding?.title ? { title: binding.title } : {}),
+      });
+    q.paperId = papers.get(key)!.id;
     papers.get(key)!.questions.push(q);
+    if (binding) metadataOrder.set(q, binding.order);
   }
-  const checks = new Map<string, Promise<unknown>>();
+  for (const paper of papers.values())
+    paper.questions.sort(
+      (a, b) =>
+        (metadataOrder.get(a) ?? Number.MAX_SAFE_INTEGER) -
+        (metadataOrder.get(b) ?? Number.MAX_SAFE_INTEGER),
+    );
+  const checks = new Map<string, Promise<ResolvedMedia>>();
   for (const [i, q] of questions.entries()) {
-    for (const ref of new Set(allReferences(q))) {
-      const path = resolveImage(ref, q.source, assets);
-      if (!path) {
-        issues.push({ path: q.source, message: 'Image unavailable: ' + ref });
-        continue;
+    const seen = new Set<string>();
+    for (const media of questionMedia(q)) {
+      const key = JSON.stringify([
+        q.source,
+        media.kind,
+        media.reference,
+        media.reference ? undefined : media.field,
+      ]);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const decorate = (issue: Issue): Issue => {
+        const diagnostic: Issue = {
+          ...issue,
+          mediaKind:
+            !issue.mediaKind || issue.mediaKind === 'unknown' ? media.kind : issue.mediaKind,
+          path: q.source,
+          field: media.field,
+          structureType: q.kind,
+          questionId: q.id,
+        };
+        if (issue.severity !== 'info') diagnostic.message = issueMessage(diagnostic);
+        return diagnostic;
+      };
+      try {
+        if (!checks.has(key)) checks.set(key, resolveMedia(media.reference, q.source, assets));
+        const resolved = await checks.get(key)!;
+        diagnostics.push(...resolved.diagnostics.map(decorate));
+      } catch (error) {
+        const issue =
+          error instanceof MediaError
+            ? error.diagnostic
+            : mediaError('file_read', media.reference, q.source, media.kind).diagnostic;
+        diagnostics.push(decorate(issue));
       }
-      if (!checks.has(path))
-        checks.set(
-          path,
-          imageHeader(assets.get(path)!).catch((e) => {
-            issues.push({ path, message: 'Image unavailable: ' + errorText(e) });
-            assets.delete(path);
-          }),
-        );
-      await checks.get(path);
     }
-    progress?.({ phase: 'Processing images...', completed: i + 1, total: questions.length });
+    progress?.({ phase: 'Processing media...', completed: i + 1, total: questions.length });
   }
+  for (const d of diagnostics)
+    if (d.code === 'field_variant') {
+      const key = `${d.structureType}:${d.field}`;
+      coverage.variants[key] = (coverage.variants[key] || 0) + 1;
+    }
   progress?.({ phase: 'Ready', completed: files.size, total: files.size });
-  return { name, papers: [...papers.values()], issues, filesScanned: files.size, assets };
+  return {
+    name,
+    papers: [...papers.values()],
+    issues: importWarnings(diagnostics),
+    diagnostics,
+    coverage,
+    filesScanned: files.size,
+    assets,
+  };
 }

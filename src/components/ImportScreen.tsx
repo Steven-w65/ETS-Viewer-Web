@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import type { Progress } from '../types';
 import { Icon } from './Icon';
+import { FolderLocations } from './FolderLocations';
 interface Props {
   onFolder: (files: File[]) => void;
   onZip: (file: File) => void;
@@ -15,12 +16,10 @@ export function ImportScreen({ onFolder, onZip, error, progress, onCancel }: Pro
     <main className="import-screen">
       <div className="welcome">
         <div className="welcome-mark">
-          <Icon name="book" size={30} />
+          <Icon name="book" size={26} />
         </div>
-        <span className="eyebrow">YOUR ANSWERS, AT HAND</span>
         <h1>ETS Viewer</h1>
-        <p className="welcome-description">View your ETS reference answers.</p>
-        <p className="welcome-hint">Open a local question bank to begin.</p>
+        <p className="welcome-description">Open a local question bank to view reference answers.</p>
         <div className="import-actions">
           <button
             className="primary-button"
@@ -39,6 +38,7 @@ export function ImportScreen({ onFolder, onZip, error, progress, onCancel }: Pro
             Import ZIP
           </button>
         </div>
+        <FolderLocations />
         <input
           ref={(el) => {
             folder.current = el;
@@ -90,19 +90,7 @@ export function ImportScreen({ onFolder, onZip, error, progress, onCancel }: Pro
             {error}
           </div>
         )}
-        <p className="privacy">
-          <Icon name="shield" size={16} />
-          <span>
-            Your files are processed locally.
-            <br />
-            Nothing is uploaded.
-          </span>
-        </p>
-        <p className="compatibility">
-          Folder selection depends on your browser.
-          <br />
-          Import ZIP is available on desktop, Android and iOS.
-        </p>
+        <p className="privacy">Files stay on your device.</p>
       </div>
     </main>
   );

@@ -1,6 +1,7 @@
 import { Inflate, strFromU8 } from 'fflate';
 import type { Progress, VirtualFile } from '../../types';
 import { baseName, normalizePath } from '../paths';
+import { isMediaPath } from '../media/classify';
 export const LIMITS = {
   entries: 20_000,
   archiveBytes: 128 * 1024 ** 2,
@@ -12,7 +13,8 @@ export const isRaster = (path: string) => /\.(png|jpe?g|gif|bmp|webp)$/i.test(pa
 export function supportAsset(path: string): boolean {
   const name = baseName(path);
   return (
-    /\.(mp3|wav|mp4|png|jpe?g|gif|bmp|webp|css|js|html?|svg|ico|woff2?|ttf)$/i.test(path) ||
+    isMediaPath(path) ||
+    /\.(css|js|html?|svg|ico|woff2?|ttf)$/i.test(path) ||
     ['pc_xst_dict.json', 'worddict_data.json'].includes(name) ||
     (path.split('/').some((p) => p.startsWith('template_')) &&
       ['ctrl.json', 'ctrl_check.json', 'res.json', 'info.json'].includes(name)) ||
@@ -45,7 +47,7 @@ export function folderFiles(files: readonly File[]): VirtualFile[] {
     if (seen.has(path)) throw new Error('Duplicate folder path: ' + path);
     seen.add(path);
     total += file.size;
-    // Files remain browser-backed Blobs. Audio/video are never copied or decoded.
+    // Files remain browser-backed Blobs; media is decoded lazily by its renderer.
     if (total > 1024 * 1024 ** 2)
       throw new Error('Folder size limit (1 GiB) exceeded. Select a smaller bank.');
     result.push({ path, blob: file });
@@ -138,7 +140,7 @@ export async function readZip(
     seen.add(path);
     total += original;
     if (total > limits.totalBytes) fail('uncompressed-size limit exceeded');
-    if (!directory && original > limits.fileBytes && (!supportAsset(path) || isRaster(path)))
+    if (!directory && original > limits.fileBytes && (!supportAsset(path) || isMediaPath(path)))
       fail('file-size limit exceeded');
     if (u32(offset) !== 0x04034b50) fail('missing local header');
     const localFlags = u16(offset + 6),
@@ -155,7 +157,7 @@ export async function readZip(
       (u32(offset + 14) !== crc || u32(offset + 18) !== compressed || u32(offset + 22) !== original)
     )
       fail('local size or CRC mismatch');
-    if (!directory && (!supportAsset(path) || isRaster(path)))
+    if (!directory && (!supportAsset(path) || isMediaPath(path)))
       records.push({ path, offset: payload, compressed, original, method, crc });
     pos += 46 + n + extra + comment;
   }

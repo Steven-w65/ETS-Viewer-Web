@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:browser": "node tools/browser-smoke.mjs",
+    "test:media": "node tools/browser-media.mjs",
     "test:parity": "node tools/check-parity.mjs"
   },
   "dependencies": {

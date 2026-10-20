@@ -1,4 +1,4 @@
-import { KIND_LABELS, type Question } from '../../types';
+import { questionKindLabel, type Question } from '../../types';
 import { plainText } from '../markup';
 export function exportFilename(task: string): string {
   // Same Windows-safe names as the desktop exporter, even when used on mobile.
@@ -18,15 +18,18 @@ export function formatAnswers(task: string, questions: readonly Question[]): str
     '',
   ];
   for (const q of questions) {
-    lines.push('='.repeat(72), `Question group: ${q.id}`, KIND_LABELS[q.kind]);
+    lines.push('='.repeat(72), `Question group: ${q.id}`, questionKindLabel(q));
     for (const [label, value] of [
       ['Topic', q.topic],
       ['Instructions', q.instructions],
       ['Context', q.context],
     ])
       if (value) lines.push('', label + ':', plainText(value));
+    for (const material of q.sharedMaterials || [])
+      if (material.text) lines.push('', material.label + ':', plainText(material.text));
     for (const p of q.parts) {
-      lines.push('', 'Question: ' + q.id + (p.number ? '/' + p.number : ''));
+      const number = p.officialNumber || p.number;
+      lines.push('', 'Question: ' + q.id + (number ? '/' + number : ''));
       if (p.prompt) lines.push(plainText(p.prompt));
       if (p.context) lines.push('', 'Context:', plainText(p.context));
       if (p.translation) lines.push('', 'Translation:', plainText(p.translation));
@@ -34,8 +37,13 @@ export function formatAnswers(task: string, questions: readonly Question[]): str
         lines.push(
           '',
           'Options:',
-          ...p.options.map((o) => `${plainText(o.label)}. ${plainText(o.text)}`),
+          ...p.options.map(
+            (o) =>
+              `${plainText(o.label)}. ${[plainText(o.text), ...(o.images || []).map((ref) => '[Image: ' + ref.replace(/[\r\n]/g, ' ') + ']')].filter(Boolean).join(' ')}`,
+          ),
         );
+      for (const supplement of p.supplements || [])
+        if (supplement.text) lines.push('', supplement.label + ':', plainText(supplement.text));
       lines.push(
         '',
         '-'.repeat(72),

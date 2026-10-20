@@ -13,7 +13,8 @@ export function Icon({
     | 'settings'
     | 'shield'
     | 'download'
-    | 'close';
+    | 'close'
+    | 'warning';
   size?: number;
 }) {
   const paths = {
@@ -28,6 +29,7 @@ export function Icon({
     shield: 'M12 3 3 7v5c0 5 9 9 9 9s9-4 9-9V7l-9-4Zm-4 9 3 3 5-6',
     download: 'M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5',
     close: 'm6 6 12 12M6 18 18 6',
+    warning: 'M12 3 2 21h20L12 3Zm0 6v5m0 3h.01',
   };
   return (
     <svg

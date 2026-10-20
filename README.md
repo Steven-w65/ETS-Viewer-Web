@@ -38,7 +38,7 @@ Open a local folder or ZIP, choose a paper, and read its stored reference answer
 | **Local import**               | Open a question-bank folder or ZIP. Parsing runs in a background worker.                                         |
 | **Focused reading**            | See the first reference answer immediately. Expand questions, shared material, and additional answers as needed. |
 | **Desktop and mobile layouts** | Browse with a collapsible sidebar on desktop or dedicated paper, question, and reading pages on mobile.          |
-| **Original content**           | Read supported question formats, safe rich text, tables, and local images.                                       |
+| **Original content**           | Read supported question formats, safe rich text, tables, and local images, audio, and video.                     |
 | **Appearance controls**        | Follow your system theme or choose Light or Dark in Settings.                                                    |
 | **Paper export**               | Download a complete paper as a desktop-compatible UTF-8 text file.                                               |
 
@@ -107,16 +107,24 @@ ETS/
         ├── content2.json
         ├── info.json
         └── material/
-            └── <original images>
+            └── <original images, audio, and video>
 ```
 
-The scanner tries `content.json`, then `content2.json`, then supported `info.json`
-choice metadata, keeping one question group per directory. Other supported JSON is
-identified by its content. Invalid records produce warnings while valid records continue
-loading. See the [data format guide](docs/data-format.md) for schema and fallback details.
+The scanner validates both `content.json` and `content2.json`. Equivalent copies load
+once; complementary fields merge by explicit IDs; conflicting revisions and unrelated
+groups remain available with diagnostics. Supported `info.json` choice metadata is a
+fallback when neither content file is usable. Other supported JSON is identified by
+its content. Invalid records produce warnings while valid records continue loading.
+See the [data format guide](docs/data-format.md) for exact reconciliation rules and
+supported metadata relationships.
+
+Import warnings appear as a compact count immediately before **Settings**. Open it for
+the warning-details dialog: missing media references and their source JSON paths are
+shown separately, with attempted resolver paths under **Technical details**. Warnings
+remain available while the bank is open, and valid questions continue loading.
 
 Canceling the file picker leaves the page unchanged. **Cancel import** stops the background
-worker; **Change Bank** clears the current bank and releases its image resources.
+worker; **Change Bank** clears the current bank and releases its media resources.
 
 ### 2. Read reference answers
 
@@ -129,9 +137,19 @@ worker; **Change Bank** clears the current bank and releases its image resources
 - **Set your appearance.** Open **Settings** and choose System, Light, or Dark. System is the
   default. Resizing preserves expanded cards; changing groups resets them and the reading scroll.
 
-The parser supports `collector.choose`, `collector.dialogue`, `collector.picture`,
-`collector.word`, and `collector.read`. It shows answers already stored in supported fields;
-word and reading evaluator or prompt fields are never treated as answers.
+The modular parser supports `collector.choose`, `collector.role`, `collector.3q5a`,
+`collector.fill`, `collector.dialogue`, `collector.picture`, `collector.word`, and
+`collector.read`. Choices can contain local images. Keywords stay with their source
+question; Key Points and Explanation use the same independent collapsible cards.
+Only stored reference answers are shown. Word and reading evaluator or prompt fields
+are never treated as answers.
+
+Referenced MP3 and browser-compatible MP4 files use native playback controls in their
+own question, shared material, or stored-answer card. Playback never starts automatically.
+Collapsing the card, changing groups, leaving mobile reading, or changing banks stops
+playback. Other supported local containers are WAV, Ogg audio, M4A, and WebM video;
+actual codec support depends on your browser and operating system. Unreferenced files
+never appear just because they share a `material/` directory.
 
 ### 3. Export a paper
 
@@ -141,6 +159,8 @@ cards and the currently visible group do not limit the export.
 
 Exports preserve the desktop text format, original order, UTF-8 BOM, LF newlines, and
 Windows-safe filenames. Your browser chooses the save destination; source files are unchanged.
+Image options use textual `[Image: reference]` placeholders. Explicit official numbers
+take precedence over local numbers when an unambiguous metadata mapping exists.
 
 ## Privacy and file handling
 
@@ -150,7 +170,8 @@ uploads, or analytics. Imported content stays in memory for the current session;
 `localStorage`. There is no bank restoration, IndexedDB storage, or service worker cache.
 
 Imported HTML is parsed into an allowlisted React tree. Scripts, styles, event handlers,
-frames, links, and imported resource-loading attributes are removed. Images must be local
+frames, links, and unsafe resource-loading attributes are removed. Only local image and
+audio/video source references enter the media resolver. Images must be local
 PNG, JPEG, GIF, BMP, or WebP files beside the source JSON or in its question-local
 `material/` directory. Remote URLs, absolute paths, and `file:` references are rejected.
 
@@ -165,16 +186,20 @@ PNG, JPEG, GIF, BMP, or WebP files beside the source JSON or in its question-loc
 | Advertised uncompressed ZIP total, including ignored assets |                    256 MiB |
 | Actual extracted total, checked during inflation            |                    256 MiB |
 | Individual extracted data file / JSON                       |                     32 MiB |
+| Individual audio/video resource                             |                     32 MiB |
 | Raster image                                                | 16 MiB / 40 million pixels |
 | Individual image width or height                            |              32,768 pixels |
 
 ZIP headers, filenames, sizes, and CRCs are validated. Duplicate, absolute, and traversal
 paths, symlinks, encryption, split archives, and ZIP64 are rejected. Filenames must be
-UTF-8; recreate legacy archives with Unicode filenames if needed. Unused audio, video,
-and template assets are not extracted.
+UTF-8; recreate legacy archives with Unicode filenames if needed. Supported audio/video
+files are retained under the same extraction limits, but only explicit references are
+rendered. Unknown template/support assets are not extracted.
 
-Image dimensions are checked before decoding. Invalid images show a neutral fallback,
-and image URLs are released when the bank changes. HTML fragments exceeding 20,000
+Media types are checked against bounded file signatures; image dimensions are checked
+before decoding, including EXIF orientation. Missing, mismatched, and undecodable media
+show concise type-specific fallbacks. URLs are shared while in use and released after
+their last consumer detaches. HTML fragments exceeding 20,000
 formatting nodes or 80 nesting levels fall back to their full safe text and image-reference
 labels, preserving stored answers and exports.
 
@@ -193,14 +218,16 @@ or one paper at a time if necessary.
 | `npm test`                                                                  | Run unit and component tests once.                                  |
 | `npm run test:watch`                                                        | Run tests in watch mode.                                            |
 | `npm run test:browser`                                                      | Check the production build with Playwright and capture screenshots. |
+| `npm run test:media`                                                        | Check actual local MP3/MP4 playback, media fallbacks, and cleanup.  |
 | `npm run test:parity -- "<desktop-repository-path>" "<question-bank-path>"` | Compare parser output and paper exports with the desktop project.   |
 
 ### Browser checks
 
 ```sh
 npm run build
-npx playwright install chromium webkit
+npx playwright install chromium webkit firefox
 npm run test:browser
+npm run test:media
 ```
 
 The script uses installed Edge on Windows and Playwright Chromium on other platforms.
@@ -209,12 +236,16 @@ It starts a temporary preview on port **4173** and stops it afterward. Configure
 | Environment variable         | Purpose                                              |
 | :--------------------------- | :--------------------------------------------------- |
 | `ETS_BROWSER_ENGINE=webkit`  | Run with Playwright WebKit.                          |
+| `ETS_BROWSER_ENGINE=firefox` | Run with Playwright Firefox, if its runtime works.   |
 | `ETS_BROWSER_CHANNEL=chrome` | Use installed Chrome for Chromium checks on Windows. |
 | `ETS_BASE_URL`               | Target an already-running local preview.             |
 
 Browser checks use synthetic data. Screenshots go to `docs/screenshots/`; generated test
 inputs stay in ignored `.qa/`. The optional parity check needs the desktop project's
 Python dependencies. The web app itself runs independently of that project.
+The media check uses port **4176**, creates tiny synthetic MP3/MP4 fixtures, and reports
+native codec availability separately from app behavior. Fixture generation requires a
+Chromium browser with native H.264 MP4 recording support, even when checking another engine.
 
 ### Project structure
 
@@ -222,11 +253,12 @@ Python dependencies. The web app itself runs independently of that project.
 src/
 ├── components/       Import, navigation, reading cards, and warnings
 ├── core/
-│   ├── parser/       Collector adapters and answer metadata joins
-│   ├── scanner/      File discovery, copy fallback, and encoding handling
+│   ├── parser/       Typed registry, eight collector modules, and shared utilities
+│   ├── scanner/      File discovery, copy reconciliation, metadata, and diagnostics
 │   ├── importer/     Folder validation and bounded ZIP extraction
 │   ├── exporter/     Paper formatting and browser downloads
-│   ├── images.ts     Image validation and resource lifecycle
+│   ├── media/        Typed classification, scoped resolution, diagnostics, URL leases
+│   ├── images.ts     Compatibility exports for the previous image API
 │   ├── markup.ts     Safe rich-text parsing
 │   └── paths.ts      Virtual paths and directory grouping
 ├── hooks/            Bank lifecycle and appearance preferences
@@ -239,6 +271,9 @@ tools/                Browser checks and desktop parity tools
 docs/                 Data format guide, verification report, and screenshots
 ```
 
+See [parser architecture and extension guide](docs/parser-architecture.md) for the
+normalized contract, registry example, field rules, and guidance on adding collectors.
+
 ## Troubleshooting
 
 | Situation                                    | What to do                                                                                                                                                                      |
@@ -247,6 +282,7 @@ docs/                 Data format guide, verification report, and screenshots
 | Files are only available in cloud storage    | Download them through your device's file provider before importing.                                                                                                             |
 | **No Exams Found**                           | Check the selected directory and review import warnings. The bank must contain a supported ETS schema.                                                                          |
 | Images are missing                           | Keep the original relative assets beside the JSON or in its `material/` directory. Desktop absolute paths cannot be loaded by the browser.                                      |
+| Audio/video is unavailable                   | Review import warnings for missing or mismatched files. A present MP4 can still use an unsupported codec; try a browser that supports the original file. No conversion occurs.  |
 | An answer is missing                         | **Answer not found** means no answer was found in the supported stored-answer fields. Check the source bank.                                                                    |
 | Folder dates show **Date unavailable**       | Browsers expose file modification times, which do not establish a folder's modification date.                                                                                   |
 | An import hits a size or memory limit        | Import a smaller bank or a single paper. Expand the import limits above for exact bounds.                                                                                       |
@@ -263,3 +299,4 @@ coverage and limitations are recorded in the [verification report](docs/verifica
 | :---------------------------------------------------- | :------------------------------------------------------------------------------------ |
 | [Data format and desktop parity](docs/data-format.md) | Collector schemas, answer precedence, metadata joins, image paths, and export format. |
 | [Verification report](docs/verification.md)           | Executed checks, test coverage, environment notes, and known limitations.             |
+| [Local media handling](docs/media-handling.md)        | Verified root causes, supported references, resolution, playback, and URL ownership.  |

@@ -54,7 +54,17 @@ const records = {};
 for (let paper = 0; paper < 2; paper++)
   for (let i = 0; i < 22; i++) {
     const id = String(10001 + i),
-      kind = i === 1 ? 'collector.dialogue' : i === 2 ? 'collector.picture' : 'collector.choose';
+      kind =
+        [
+          'collector.choose',
+          'collector.dialogue',
+          'collector.picture',
+          'collector.role',
+          'collector.3q5a',
+          'collector.fill',
+          'collector.read',
+          'collector.word',
+        ][i] || 'collector.choose';
     let info;
     if (kind === 'collector.choose')
       info = {
@@ -68,7 +78,11 @@ for (let paper = 0; paper < 2; paper++)
             xt_value: 'M: Shall we visit the library this afternoon?\nW: We could go after lunch.',
             answer: 'B',
             xxlist: [
-              { xx_mc: 'A', xx_nr: 'Visit early in the morning.' },
+              {
+                xx_mc: 'A',
+                xx_nr: 'Visit early in the morning.',
+                ...(i === 0 ? { xx_wj: 'choice.png' } : {}),
+              },
               { xx_mc: 'B', xx_nr: 'Go to the library after lunch.' },
               { xx_mc: 'C', xx_nr: 'Stay home for the afternoon.' },
             ],
@@ -110,10 +124,40 @@ for (let paper = 0; paper < 2; paper++)
         value: 'Describe the original picture.',
         image: '示意 图.png',
         std: [{ value: 'The picture shows a calm afternoon.' }],
+        keypoint: 'Source key points.',
+        analyze: 'Source explanation.',
+      };
+    if (kind === 'collector.role' || kind === 'collector.3q5a')
+      info = {
+        stid: id,
+        value: 'Shared interview.',
+        question: [
+          {
+            ask: 'Where do you study?',
+            keywords: 'Source keywords.',
+            std: [{ value: 'At school.' }, { value: 'I study at school.' }],
+          },
+        ],
+      };
+    if (kind === 'collector.fill')
+      info = {
+        stid: id,
+        value: 'Source fill passage.',
+        std: [
+          { th: '15', value: 'A/B' },
+          { xth: '16', value: '2026/10/19' },
+        ],
+      };
+    if (kind === 'collector.read' || kind === 'collector.word')
+      info = {
+        stid: id,
+        value: '<p>Original first paragraph.</p><p>Original second paragraph.</p>',
       };
     const p = `Demo ETS/${paper ? '试卷 Beta' : '试卷 Alpha'}/content_${id}/content.json`;
     records[p] = strToU8(JSON.stringify({ structure_type: kind, info }));
     if (i === 2) records[p.replace('content.json', 'material/示意 图.png')] = png;
+    if (i === 0) records[p.replace('content.json', 'material/choice.png')] = png;
+    if (i === 4) records[p.replace('content.json', 'content2.json')] = records[p];
   }
 const zipPath = path.join(root, 'demo-bank.zip');
 await writeFile(zipPath, zipSync(records));
@@ -248,6 +292,47 @@ try {
     'Question defaults collapsed',
   );
   await page.locator('.part-section .collapse-toggle').first().click();
+  await page.locator('.option img.source-image').waitFor();
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('.option img')].some((img) => img.naturalWidth === 1200),
+  );
+  check(
+    await page.locator('.option img.source-image').isVisible(),
+    'Image-based choice resolves through the local asset reader',
+  );
+  check(
+    await page
+      .locator('.collapse-shell')
+      .last()
+      .evaluate((el) => getComputedStyle(el).transitionDuration === '0.2s'),
+    'Collapse transition lasts 200ms',
+  );
+  check(
+    await page
+      .locator('.reader')
+      .evaluate((el) => getComputedStyle(el).animationDuration === '0.14s'),
+    'Question navigation transition lasts 140ms',
+  );
+  const heights = await page
+    .locator('.part-section')
+    .first()
+    .evaluate(async (el) => {
+      const shell = el.querySelector('.collapse-shell'),
+        button = el.querySelector('.collapse-toggle');
+      await new Promise((r) => setTimeout(r, 220));
+      const start = shell.getBoundingClientRect().height;
+      button.click();
+      await new Promise((r) => setTimeout(r, 80));
+      const middle = shell.getBoundingClientRect().height;
+      await new Promise((r) => setTimeout(r, 150));
+      const end = shell.getBoundingClientRect().height;
+      button.click();
+      return { start, middle, end };
+    });
+  check(
+    heights.start > heights.middle && heights.middle > 0 && heights.end === 0,
+    'Collapse animates layout smoothly to zero height',
+  );
   check(
     await page.getByText('Go to the library after lunch.', { exact: true }).isVisible(),
     'Options retained',
@@ -301,9 +386,57 @@ try {
   const text = exported.toString('utf8');
   check((text.match(/Question group:/g) || []).length === 22, 'Export includes full paper');
   check(!text.includes('Would you like to visit again?'), 'Export excludes extra answers');
+  check(
+    text.includes('A. Visit early in the morning. [Image: choice.png]') &&
+      text.includes('Question: 10006/15') &&
+      text.includes('2026/10/19'),
+    'Mixed eight-type paper export preserves option images, fill numbers, and slash text',
+  );
+  check(
+    await page
+      .locator('.toast')
+      .evaluate((el) => getComputedStyle(el).animationDuration === '0.18s'),
+    'Toast enters in 180ms',
+  );
+  await page.waitForFunction(() => !!document.querySelector('.toast.is-leaving'));
+  check(
+    await page
+      .locator('.toast')
+      .evaluate((el) => getComputedStyle(el).animationDuration === '0.18s'),
+    'Toast exits in 180ms',
+  );
+  await page.locator('.toast').waitFor({ state: 'hidden' });
   await page.getByRole('button', { name: 'Collapse sidebar' }).click();
+  await page.locator('.sidebar').waitFor({ state: 'hidden' });
   check(!(await page.locator('.sidebar').isVisible()), 'Sidebar collapses');
+  check(
+    await page
+      .locator('.bank-layout')
+      .evaluate((el) => getComputedStyle(el).transitionDuration === '0.2s'),
+    'Sidebar transition lasts 200ms',
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Back to question list' }).click();
+  check(
+    (await page.locator('.sidebar').isVisible()) &&
+      (await page.locator('.sidebar').evaluate((el) => !el.inert)),
+    'Mobile navigation remains usable after collapsing the desktop sidebar',
+  );
+  await page.setViewportSize({ width: 1440, height: 960 });
   await page.getByRole('button', { name: 'Expand sidebar' }).click();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  check(
+    await page
+      .locator('.collapse-shell')
+      .first()
+      .evaluate((el) => getComputedStyle(el).transitionDuration === '0s'),
+    'Reduced motion disables collapse transitions',
+  );
+  check(
+    await page.locator('.reader').evaluate((el) => getComputedStyle(el).animationName === 'none'),
+    'Reduced motion disables navigation animations',
+  );
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   check((await page.locator('input[type=search]').count()) === 0, 'No search control');
   await page.getByRole('button', { name: 'Change Bank', exact: true }).click();
   check(
@@ -372,14 +505,26 @@ try {
     el.scrollTop = 550;
     el.dispatchEvent(new Event('scroll', { bubbles: true }));
   });
-  const saved = await phone.locator('.nav-list').evaluate((el) => el.scrollTop);
+  // Record the user's actual list position at activation: WebKit may scroll an
+  // offscreen row into view before dispatching the automated click.
+  await phone
+    .locator('.question-row')
+    .nth(6)
+    .evaluate((el) =>
+      el.addEventListener(
+        'click',
+        () => {
+          globalThis.activatedListScroll = document.querySelector('.nav-list').scrollTop;
+        },
+        { capture: true, once: true },
+      ),
+    );
   await phone.locator('.question-row').nth(6).click();
+  const saved = await phone.evaluate(() => globalThis.activatedListScroll);
   check(await phone.locator('.workspace').isVisible(), 'Mobile opens reading page');
   await phone.getByRole('button', { name: 'Back to question list' }).click();
-  check(
-    Math.abs((await phone.locator('.nav-list').evaluate((el) => el.scrollTop)) - saved) < 2,
-    'Question list scroll restored',
-  );
+  const restored = await phone.locator('.nav-list').evaluate((el) => el.scrollTop);
+  check(Math.abs(restored - saved) < 2, `Question list scroll restored (${saved} → ${restored})`);
   await phone.locator('.nav-list').evaluate((el) => (el.scrollTop = 0));
   await phone.locator('.question-row').nth(1).click();
   await phone.getByRole('heading', { name: 'Question 10002', exact: true }).waitFor();

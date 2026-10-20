@@ -3,6 +3,7 @@ import { Parser } from 'htmlparser2';
 export type FragmentNode =
   | { type: 'text'; value: string }
   | { type: 'image'; reference: string }
+  | { type: 'media'; kind: 'audio' | 'video'; references: string[] }
   | { type: 'element'; tag: string; attrs: Record<string, number>; children: FragmentNode[] };
 const blocks = new Set(['br', 'p', 'div', 'li', 'tr']);
 const tags = new Set([
@@ -28,18 +29,7 @@ const tags = new Set([
   'th',
   'blockquote',
 ]);
-const blocked = new Set([
-  'script',
-  'style',
-  'iframe',
-  'object',
-  'head',
-  'template',
-  'svg',
-  'math',
-  'audio',
-  'video',
-]);
+const blocked = new Set(['script', 'style', 'iframe', 'object', 'head', 'template', 'svg', 'math']);
 const legacyBreaks = (value: string) => value.replace(/<\/br\s*>/gi, '<br>');
 /** Pure text parsing never constructs browser DOM or fetches embedded resources. */
 export function plainText(value: string): string {
@@ -65,6 +55,7 @@ export function parseFragment(value: string): { nodes: FragmentNode[]; limited: 
   const root: FragmentNode[] = [];
   const stack: { tag: string; nodes: FragmentNode[] }[] = [{ tag: '', nodes: root }];
   const fallback: string[] = [];
+  const mediaStack: { tag: string; node: Extract<FragmentNode, { type: 'media' }> }[] = [];
   let suppressed = 0,
     count = 0,
     limited = false;
@@ -80,6 +71,25 @@ export function parseFragment(value: string): { nodes: FragmentNode[]; limited: 
           return;
         }
         if (suppressed) return;
+        if (tag === 'audio' || tag === 'video') {
+          if (mediaStack.length || !canAdd()) return;
+          const node: Extract<FragmentNode, { type: 'media' }> = {
+            type: 'media',
+            kind: tag,
+            references: attrs.src ? [attrs.src] : [],
+          };
+          stack.at(-1)!.nodes.push(node);
+          mediaStack.push({ tag, node });
+          if (attrs.src) fallback.push(`\n${tag} reference: ${attrs.src}\n`);
+          return;
+        }
+        if (mediaStack.length) {
+          if (tag === 'source' && attrs.src) {
+            mediaStack.at(-1)!.node.references.push(attrs.src);
+            fallback.push('\nMedia reference: ' + attrs.src + '\n');
+          }
+          return;
+        }
         if (blocks.has(tag)) fallback.push('\n');
         if (tag === 'img' && attrs.src) fallback.push('\nImage reference: ' + attrs.src + '\n');
         if (limited) return;
@@ -110,6 +120,10 @@ export function parseFragment(value: string): { nodes: FragmentNode[]; limited: 
           return;
         }
         if (suppressed) return;
+        if (mediaStack.length) {
+          if (mediaStack.at(-1)!.tag === tag) mediaStack.pop();
+          return;
+        }
         if (blocks.has(tag)) fallback.push('\n');
         if (limited) return;
         for (let i = stack.length - 1; i > 0; i--)
@@ -119,7 +133,7 @@ export function parseFragment(value: string): { nodes: FragmentNode[]; limited: 
           }
       },
       ontext(text) {
-        if (suppressed) return;
+        if (suppressed || mediaStack.length) return;
         fallback.push(text);
         if (canAdd()) stack[stack.length - 1].nodes.push({ type: 'text', value: text });
       },

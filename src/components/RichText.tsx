@@ -1,4 +1,5 @@
-import { createElement, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createElement, useMemo, type ReactNode } from 'react';
+import { LocalMedia } from './LocalMedia';
 import { parseFragment, type FragmentNode } from '../core/markup';
 import type { ImageResources } from '../core/images';
 export interface RichProps {
@@ -16,40 +17,8 @@ export function LocalImage({
   source: string;
   resources: ImageResources;
 }) {
-  const [result, setResult] = useState<{ url: string; width: number; height: number } | null>(null),
-    [failed, setFailed] = useState(false);
-  useEffect(() => {
-    let current = true;
-    setResult(null);
-    setFailed(false);
-    resources.load(reference, source).then(
-      ({ url, header }) => {
-        if (current) setResult({ url, ...header });
-      },
-      () => {
-        if (current) setFailed(true);
-      },
-    );
-    return () => {
-      current = false;
-    };
-  }, [reference, source, resources]);
-  if (failed) return <span className="image-fallback">Image unavailable: {reference}</span>;
-  if (!result)
-    return (
-      <span className="image-fallback" role="status">
-        Loading image…
-      </span>
-    );
   return (
-    <img
-      className="source-image"
-      src={result.url}
-      width={result.width}
-      height={result.height}
-      alt={reference}
-      onError={() => setFailed(true)}
-    />
+    <LocalMedia reference={reference} source={source} resources={resources} fallbackKind="image" />
   );
 }
 const nodeText = (node: FragmentNode): string =>
@@ -124,7 +93,24 @@ function nodesToReact(
     if (node.type === 'text') return node.value;
     if (node.type === 'image')
       return (
-        <LocalImage key={i} reference={node.reference} source={source} resources={resources} />
+        <LocalMedia
+          key={i}
+          reference={node.reference}
+          source={source}
+          resources={resources}
+          fallbackKind="image"
+        />
+      );
+    if (node.type === 'media')
+      return (
+        <LocalMedia
+          key={i}
+          reference={node.references[0] || ''}
+          alternatives={node.references.slice(1)}
+          fallbackKind={node.kind}
+          source={source}
+          resources={resources}
+        />
       );
     const attrs: { key: number; colSpan?: number; rowSpan?: number } = { key: i };
     if (node.attrs.colspan) attrs.colSpan = node.attrs.colspan;

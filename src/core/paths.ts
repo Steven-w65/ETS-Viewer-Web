@@ -11,6 +11,35 @@ export function normalizePath(input: string): string {
 export const parentPath = (path: string) =>
   path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '';
 export const baseName = (path: string) => path.split('/').at(-1) ?? '';
+/** Safe candidates within the owning resource; never search other folders by basename. */
+export function ownedPaths(reference: string, source: string): string[] {
+  const variants = [reference];
+  try {
+    const decoded = decodeURIComponent(reference);
+    if (decoded !== reference) variants.push(decoded);
+  } catch {
+    /* A literal percent is valid. */
+  }
+  const paths: string[] = [],
+    directory = parentPath(source),
+    prefix = directory ? directory + '/' : '';
+  let unsafe = false;
+  for (const variant of variants)
+    try {
+      const path = normalizePath(
+        variant
+          .replace(/\\/g, '/')
+          .split('/')
+          .filter((segment) => segment !== '.')
+          .join('/'),
+      );
+      paths.push(prefix + path);
+      if (!path.startsWith('material/')) paths.push(prefix + 'material/' + path);
+    } catch {
+      unsafe = true;
+    }
+  return unsafe ? [] : [...new Set(paths)];
+}
 export function taskFolder(source: string): string {
   const folder = parentPath(source);
   return baseName(folder).startsWith('content_') ? parentPath(folder) : folder;

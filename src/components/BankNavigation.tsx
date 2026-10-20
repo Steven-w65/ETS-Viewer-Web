@@ -1,5 +1,5 @@
 import type { Bank, Paper } from '../types';
-import { KIND_LABELS } from '../types';
+import { questionKindLabel } from '../types';
 import { questionTitle } from '../core/parser';
 import { Icon } from './Icon';
 import type { RefObject } from 'react';
@@ -13,6 +13,7 @@ export function BankNavigation({
   onChange,
   listRef,
   onScroll,
+  hidden = false,
 }: {
   bank: Bank;
   paper: Paper | undefined;
@@ -23,9 +24,15 @@ export function BankNavigation({
   onChange: () => void;
   listRef: RefObject<HTMLDivElement | null>;
   onScroll: (top: number) => void;
+  hidden?: boolean;
 }) {
   return (
-    <aside className="sidebar" aria-label={paper ? 'Questions within paper' : 'Paper list'}>
+    <aside
+      className="sidebar"
+      aria-label={paper ? 'Questions within paper' : 'Paper list'}
+      aria-hidden={hidden || undefined}
+      inert={hidden}
+    >
       <div className="sidebar-heading">
         {paper ? (
           <>
@@ -45,7 +52,12 @@ export function BankNavigation({
           </>
         )}
       </div>
-      <div className="nav-list" ref={listRef} onScroll={(e) => onScroll(e.currentTarget.scrollTop)}>
+      <div
+        className="nav-list"
+        key={paper?.key || 'papers'}
+        ref={listRef}
+        onScroll={(e) => onScroll(e.currentTarget.scrollTop)}
+      >
         {paper
           ? paper.questions.map((q, i) => (
               <button
@@ -56,7 +68,7 @@ export function BankNavigation({
               >
                 <span className="row-top">
                   <strong>{q.id}</strong>
-                  <span>{KIND_LABELS[q.kind]}</span>
+                  <span>{questionKindLabel(q)}</span>
                 </span>
                 <span className="row-preview">{questionTitle(q).slice(0, 240)}</span>
               </button>

@@ -7,7 +7,8 @@ import { Navigation } from './components/Navigation';
 import { Reader } from './components/Reader';
 import { Warnings } from './components/Warnings';
 import { Icon } from './components/Icon';
-import { KIND_LABELS, type Paper } from './types';
+import { questionKindLabel, type Paper } from './types';
+import { Toast } from './components/Toast';
 import { downloadPaper } from './core/exporter';
 export default function App() {
   const state = useBank(),
@@ -18,6 +19,13 @@ export default function App() {
     [collapsed, setCollapsed] = useState(false),
     [settings, setSettings] = useState(false),
     [toast, setToast] = useState('');
+  const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 720px)').matches);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 720px)');
+    const change = () => setMobile(query.matches);
+    query.addEventListener('change', change);
+    return () => query.removeEventListener('change', change);
+  }, []);
   const listRef = useRef<HTMLDivElement>(null),
     readingRef = useRef<HTMLDivElement>(null),
     scrolls = useRef(new Map<string, number>()),
@@ -101,35 +109,44 @@ export default function App() {
           <span>ETS Viewer</span>
           <span className="app-tag">WEB</span>
         </div>
-        <div className="settings-wrap" ref={settingsRef}>
-          <button
-            className="settings-button"
-            aria-expanded={settings}
-            aria-controls="appearance-settings"
-            onClick={() => setSettings(!settings)}
-          >
-            <Icon name="settings" size={17} />
-            <span>Settings</span>
-          </button>
-          {settings && (
-            <div className="settings-menu" id="appearance-settings">
-              <p>Appearance</p>
-              {(['system', 'light', 'dark'] as const).map((mode) => (
-                <label key={mode}>
-                  <input
-                    type="radio"
-                    name="appearance"
-                    value={mode}
-                    checked={theme === mode}
-                    onChange={() => setTheme(mode)}
-                  />
-                  <span>{mode[0].toUpperCase() + mode.slice(1)}</span>
-                  {theme === mode && <Icon name="check" size={16} />}
-                </label>
-              ))}
-              <small>Only your appearance preference is saved.</small>
-            </div>
+        <div className="header-actions">
+          {bank && (
+            <Warnings
+              issues={bank.issues}
+              hasQuestions={bank.papers.some((p) => p.questions.length > 0)}
+              onOpen={() => setSettings(false)}
+            />
           )}
+          <div className="settings-wrap" ref={settingsRef}>
+            <button
+              className="settings-button"
+              aria-expanded={settings}
+              aria-controls="appearance-settings"
+              onClick={() => setSettings(!settings)}
+            >
+              <Icon name="settings" size={17} />
+              <span>Settings</span>
+            </button>
+            {settings && (
+              <div className="settings-menu" id="appearance-settings">
+                <p>Appearance</p>
+                {(['system', 'light', 'dark'] as const).map((mode) => (
+                  <label key={mode}>
+                    <input
+                      type="radio"
+                      name="appearance"
+                      value={mode}
+                      checked={theme === mode}
+                      onChange={() => setTheme(mode)}
+                    />
+                    <span>{mode[0].toUpperCase() + mode.slice(1)}</span>
+                    {theme === mode && <Icon name="check" size={16} />}
+                  </label>
+                ))}
+                <small>Only your appearance preference is saved.</small>
+              </div>
+            )}
+          </div>
         </div>
       </header>
       {!bank ? (
@@ -143,6 +160,7 @@ export default function App() {
       ) : (
         <div className="bank-layout">
           <BankNavigation
+            hidden={collapsed && !mobile}
             bank={bank}
             paper={paper}
             index={index}
@@ -169,20 +187,24 @@ export default function App() {
                       <div className="breadcrumb">
                         {paper.id}
                         <span>/</span>
-                        {KIND_LABELS[question.kind]}
+                        {questionKindLabel(question)}
                       </div>
                       <h1>Question {question.id}</h1>
                     </div>
                   </div>
-                  <button className="export-button" onClick={exportPaper}>
+                  <button className="export-button" aria-label="Export Paper" onClick={exportPaper}>
                     <Icon name="download" size={16} />
                     <span>Export Paper</span>
                   </button>
                 </div>
                 <div className="reading-scroll" ref={readingRef}>
-                  <Warnings issues={bank.issues} />
                   {state.resources && (
-                    <Reader key={question.source} question={question} resources={state.resources} />
+                    <Reader
+                      key={question.source}
+                      question={question}
+                      resources={state.resources}
+                      active={!mobile || screen === 'reading'}
+                    />
                   )}
                 </div>
                 <Navigation
@@ -193,7 +215,6 @@ export default function App() {
               </>
             ) : (
               <div className="overview-scroll">
-                <Warnings issues={bank.issues} />
                 <div className="overview">
                   <div className="overview-symbol">
                     <Icon name="folder" size={26} />
@@ -239,16 +260,11 @@ export default function App() {
             )}
           </main>
           <div className="mobile-bank-notes">
-            <Warnings issues={bank.issues} />
             {!bank.papers.length && <p>No Exams Found. No supported ETS papers were found.</p>}
           </div>
         </div>
       )}
-      {toast && (
-        <div className="toast" role="status">
-          {toast}
-        </div>
-      )}
+      <Toast message={toast} />
     </div>
   );
 }
