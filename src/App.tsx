@@ -107,6 +107,16 @@ export default function App() {
           )}
           <Icon name="book" size={20} />
           <span>ETS Viewer</span>
+          <a
+            className="github-link"
+            href="https://github.com/Steven-w65/ETS-Viewer-web"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="View on GitHub"
+            aria-label="View on GitHub"
+          >
+            <Icon name="github" size={18} />
+          </a>
           <span className="app-tag">WEB</span>
         </div>
         <div className="header-actions">
@@ -217,13 +227,12 @@ export default function App() {
               <div className="overview-scroll">
                 <div className="overview">
                   <div className="overview-symbol">
-                    <Icon name="folder" size={26} />
+                    <Icon name="folder" size={20} />
                   </div>
-                  <span className="eyebrow">YOUR QUESTION BANK</span>
-                  <h1>{bank.papers.length ? 'Everything, in one place.' : 'No Exams Found'}</h1>
+                  <h1>{bank.papers.length ? 'Select a paper' : 'No Exams Found'}</h1>
                   <p>
                     {bank.papers.length
-                      ? 'Choose a paper from the sidebar to view its reference answers.'
+                      ? 'Choose a paper from the sidebar to view answers.'
                       : 'No supported ETS papers were found. Review the import warnings or select another bank.'}
                   </p>
                   <div className="bank-name">{bank.name}</div>

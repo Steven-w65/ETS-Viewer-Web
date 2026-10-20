@@ -150,6 +150,28 @@ h3 {
 .brand > svg {
   color: var(--secondary);
 }
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 32px;
+  margin-left: -4px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  color: var(--secondary);
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+.github-link:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+.github-link:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
 .app-tag {
   color: var(--muted);
   font-size: 9px;
@@ -1046,19 +1068,19 @@ video.source-media {
   text-align: center;
 }
 .overview-symbol {
-  width: 62px;
-  height: 62px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
-  margin: 0 auto 29px;
+  margin: 0 auto 16px;
   border: 1px solid var(--border);
-  border-radius: 15px;
+  border-radius: 12px;
   background: var(--surface);
   color: var(--secondary);
 }
 .overview h1 {
-  font-size: 30px;
-  margin: 15px 0 16px;
+  font-size: 24px;
+  margin: 0 0 10px;
   line-height: 1.25;
 }
 .overview > p {
@@ -1626,6 +1648,18 @@ video.source-media {
   }
   .toast {
     font-size: 11px;
+  }
+}
+@media (max-width: 360px) {
+  .header-actions {
+    gap: 4px;
+  }
+  .header-actions > .warnings-button,
+  .settings-wrap > .settings-button {
+    padding-inline: 4px;
+  }
+  .github-link {
+    margin-right: -3px;
   }
 }
 .dialogue-line {
