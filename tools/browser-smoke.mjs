@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdir, writeFile, readFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, utimes } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { spawn } from 'node:child_process';
@@ -160,11 +160,25 @@ for (let paper = 0; paper < 2; paper++)
     if (i === 4) records[p.replace('content.json', 'content2.json')] = records[p];
   }
 const zipPath = path.join(root, 'demo-bank.zip');
-await writeFile(zipPath, zipSync(records));
+const modified = new Date(2026, 9, 21, 12, 0, 0);
+const folderModified = new Date(2026, 9, 19, 12, 0, 0);
+await writeFile(
+  zipPath,
+  zipSync(
+    {
+      'Demo ETS/': [new Uint8Array(), { mtime: new Date(2026, 9, 18, 12, 0, 0) }],
+      ...records,
+      'Demo ETS/试卷 Alpha/': [new Uint8Array(), { mtime: folderModified }],
+      'Demo ETS/试卷 Beta/': [new Uint8Array(), { mtime: folderModified }],
+    },
+    { mtime: modified },
+  ),
+);
 for (const [name, bytes] of Object.entries(records)) {
   const dest = path.join(root, name);
   await mkdir(path.dirname(dest), { recursive: true });
   await writeFile(dest, bytes);
+  await utimes(dest, modified, modified);
 }
 const hostile = {
   structure_type: 'collector.dialogue',
@@ -280,6 +294,12 @@ try {
   await page.locator('input[accept]').setInputFiles(zipPath);
   await page.getByRole('heading', { name: /^All Papers/ }).waitFor();
   check((await page.locator('.paper-row').count()) === 2, 'ZIP imports both papers');
+  check(
+    (await page.locator('.paper-row small').allTextContents()).every((text) =>
+      /^\d+ groups · Oct 19, 2026$/.test(text),
+    ),
+    'ZIP papers show the paper folder date, not newer content or wrapper dates',
+  );
   await page.locator('.paper-row').filter({ hasText: '试卷 Alpha' }).click();
   await page.getByRole('heading', { name: 'Question 10001', exact: true }).waitFor();
   check(
@@ -448,6 +468,12 @@ try {
   check(
     (await page.locator('.paper-row').count()) === 2,
     'Folder import works in automated picker',
+  );
+  check(
+    (await page.locator('.paper-row small').allTextContents()).every((text) =>
+      /^\d+ groups$/.test(text),
+    ),
+    'Folder imports omit unavailable directory dates rather than using file dates',
   );
   await page.reload();
   await page.getByRole('button', { name: 'Import ZIP', exact: true }).waitFor();

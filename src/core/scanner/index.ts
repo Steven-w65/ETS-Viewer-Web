@@ -1,4 +1,4 @@
-import type { Bank, Issue, Progress, Question, VirtualFile } from '../../types';
+import type { Bank, Issue, Progress, Question, VirtualFile, VirtualEntry } from '../../types';
 import { metadataAnswerMap, parseDocumentResult } from '../parser';
 import { isObject } from '../parser/utils/validation';
 import { baseName, normalizePath, parentPath, taskFolder } from '../paths';
@@ -10,6 +10,7 @@ import { questionMedia } from '../media/references';
 import { importWarnings, issueMessage } from '../diagnostics';
 import { reconcileCopies } from './copies';
 import { ResourceMetadata } from './metadata';
+import { validTimestamp } from '../dates';
 const COPIES = ['content.json', 'content2.json', 'info.json'];
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 async function json(blob: Blob): Promise<unknown> {
@@ -20,14 +21,15 @@ async function json(blob: Blob): Promise<unknown> {
   return JSON.parse(new TextDecoder(encoding, { fatal: true }).decode(b));
 }
 export async function scanBank(
-  input: VirtualFile[],
+  input: VirtualEntry[],
   name: string,
   progress?: (p: Progress) => void,
 ): Promise<Bank> {
   const diagnostics: Issue[] = [],
     questions: Question[] = [],
     assets = new Map<string, Blob>(),
-    files = new Map<string, VirtualFile>();
+    files = new Map<string, VirtualFile>(),
+    directoryDates = new Map<string, number | null>();
   const coverage: NonNullable<Bank['coverage']> = {
     observed: Object.create(null),
     successful: 0,
@@ -38,7 +40,12 @@ export async function scanBank(
   if (input.length > LIMITS.entries) throw new Error('Bank entry limit exceeded');
   for (const f of input) {
     const path = normalizePath(f.path);
-    if (files.has(path)) throw new Error('Duplicate file path: ' + path);
+    if (files.has(path) || directoryDates.has(path))
+      throw new Error('Duplicate file path: ' + path);
+    if (f.directory) {
+      directoryDates.set(path, validTimestamp(f.modified));
+      continue;
+    }
     files.set(path, { path, blob: f.blob });
     if (isMediaPath(path)) assets.set(path, f.blob);
   }
@@ -199,7 +206,7 @@ export async function scanBank(
         key,
         id: binding?.id || baseName(key) || name,
         questions: [],
-        modified: null,
+        modified: directoryDates.get(key) ?? null,
         ...(binding?.title ? { title: binding.title } : {}),
       });
     q.paperId = papers.get(key)!.id;

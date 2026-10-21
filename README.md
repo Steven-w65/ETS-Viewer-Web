@@ -284,7 +284,7 @@ normalized contract, registry example, field rules, and guidance on adding colle
 | Images are missing                           | Keep the original relative assets beside the JSON or in its `material/` directory. Desktop absolute paths cannot be loaded by the browser.                                      |
 | Audio/video is unavailable                   | Review import warnings for missing or mismatched files. A present MP4 can still use an unsupported codec; try a browser that supports the original file. No conversion occurs.  |
 | An answer is missing                         | **Answer not found** means no answer was found in the supported stored-answer fields. Check the source bank.                                                                    |
-| Folder dates show **Date unavailable**       | Browsers expose file modification times, which do not establish a folder's modification date.                                                                                   |
+| What does the paper date mean?              | The paper folder's own modification date, when an explicit ZIP directory entry provides it. Select Folder does not expose folder timestamps through the current browser picker. Unknown dates are omitted; child-file dates are never substituted. |
 | An import hits a size or memory limit        | Import a smaller bank or a single paper. Expand the import limits above for exact bounds.                                                                                       |
 | npm reports `Cannot find module 'lru-cache'` | If this checkout includes the ignored npm helper, replace `npm` with `node .qa/node_modules/npm/bin/npm-cli.js`. See the [environment notes](docs/verification.md) for context. |
 

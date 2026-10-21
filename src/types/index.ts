@@ -80,6 +80,7 @@ export interface Paper {
   key: string;
   id: string;
   questions: Question[];
+  /** The paper directory's own modification time; null when unavailable. */
   modified: number | null;
 }
 export interface Issue {
@@ -101,7 +102,15 @@ export interface Issue {
 export interface VirtualFile {
   path: string;
   blob: Blob;
+  directory?: false;
 }
+export interface VirtualDirectory {
+  path: string;
+  directory: true;
+  /** The directory entry's own modification time, never a descendant file time. */
+  modified?: number | null;
+}
+export type VirtualEntry = VirtualFile | VirtualDirectory;
 export interface Bank {
   diagnostics?: Issue[];
   coverage?: {

@@ -92,7 +92,14 @@ The established desktop layout is
 Without a reliable metadata relationship, grouping and depth-first lexical order stay
 compatible with the desktop scanner. A `content_*` directory belongs to its parent paper;
 other sources retain their physical directory grouping. `File.lastModified` is not
-treated as a directory timestamp.
+treated as a directory timestamp. The sidebar uses only an explicit directory entry's
+own modification time at the exact paper folder path. ZIP imports preserve those
+directory entries separately from files; ZIP DOS timestamps use local calendar time
+with two-second precision. Parent/wrapper folders, nested folders, metadata files,
+question files and import time are never substitutes. The current folder picker
+returns files and relative paths without directory timestamps, so Select Folder
+leaves the date unknown. ZIPs without a valid paper-folder entry do the same. Unknown
+dates omit the separator and date; no creation date is inferred.
 
 For Android-style `<root>/data/<paper-id>` and `<root>/resource/<resource-id>/` layouts,
 the scanner recognizes `sectionData[].sectionItemData[].fileName` relationships and

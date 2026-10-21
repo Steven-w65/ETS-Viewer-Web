@@ -4,11 +4,11 @@
 
 | Check                             | Result                                                                                                     |
 | --------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Unit/component tests              | 196 passed in 26 files, including media, welcome help, warnings and motion regressions |
+| Unit/component tests              | 213 passed in 27 files, including media, welcome help, warnings, motion and folder-date regressions |
 | TypeScript strict check           | Passed as part of `npm run build`                                                                          |
 | Vite production build             | Passed; static assets and a dedicated import worker generated                                              |
-| Edge 155.0.4283.62                | 47 UI assertions and 32 media checks passed; actual synthetic MP3 and H.264 MP4 playback, MP3 seeking      |
-| Playwright WebKit 27.2 on Windows | 47 UI assertions and 19 media checks passed; native MP3/MP4 unavailable, accurate fallback verified        |
+| Edge 155.0.4283.62                | 49 UI assertions passed; prior 32 media checks include actual synthetic MP3 and H.264 MP4 playback, MP3 seeking |
+| Playwright WebKit 27.2 on Windows | 49 UI assertions passed; prior 19 media checks verify fallbacks because native MP3/MP4 is unavailable |
 | Playwright Firefox 157            | Could not launch (`spawn UNKNOWN` in this run); browser behavior unverified                                 |
 | Welcome folder-location guide     | 34 Chromium and 32 WebKit checks passed; native clipboard copy/read verified in Chromium for both paths    |
 | Detailed UI motion                | 45 checks per engine passed in Edge and WebKit, including intermediate frames, reversals and dynamic height |
@@ -87,6 +87,23 @@ Component tests verify exiting content is inaccessible and then removed; reduced
 motion removes it immediately. Button hover transitions share a 140ms token.
 Detailed motion implementation, regressions and compatibility limits are documented
 in [ui-motion.md](ui-motion.md).
+
+## Paper dates
+
+Seventeen folder-date regressions cover explicit ZIP directory times, exact paper
+ownership and Unicode wrappers, omitted directory entries, ignored child-file and
+ancestor/nested-folder dates, logical Android ownership, invalid/missing timestamps,
+invalid ZIP calendar fields, duplicate/unsafe directories and the date-only label.
+Browser fixtures store Oct 19 on paper directories and Oct 21 on their content files;
+the sidebar must display Oct 19. Folder selection must omit the date because the
+current picker provides no directory timestamp. Neither creation dates nor file dates
+are inferred. Directory entries do not enter question parsing, media assets or the
+scanned-file count.
+
+An automated folder-picker probe in Edge and WebKit returned 50 files and zero
+directory entries. File modification timestamps were available, while directory
+timestamps were not. This confirms why Select Folder omits the date in the current
+browser-only implementation. No native integration or additional permission was added.
 
 ## Header import-warning dialog
 

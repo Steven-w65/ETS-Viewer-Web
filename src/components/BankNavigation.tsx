@@ -3,6 +3,7 @@ import { questionKindLabel } from '../types';
 import { questionTitle } from '../core/parser';
 import { Icon } from './Icon';
 import type { RefObject } from 'react';
+import { validTimestamp } from '../core/dates';
 export function BankNavigation({
   bank,
   paper,
@@ -73,19 +74,32 @@ export function BankNavigation({
                 <span className="row-preview">{questionTitle(q).slice(0, 240)}</span>
               </button>
             ))
-          : bank.papers.map((p) => (
-              <button className="nav-row paper-row" key={p.key} onClick={() => onPaper(p)}>
-                <Icon name="folder" size={18} />
-                <span>
-                  <strong>{p.id}</strong>
-                  <small>
-                    {p.questions.length} groups ·{' '}
-                    {p.modified ? new Date(p.modified).toLocaleDateString() : 'Date unavailable'}
-                  </small>
-                </span>
-                <span className="row-arrow">›</span>
-              </button>
-            ))}
+          : bank.papers.map((p) => {
+              const modified = validTimestamp(p.modified);
+              return (
+                <button className="nav-row paper-row" key={p.key} onClick={() => onPaper(p)}>
+                  <Icon name="folder" size={18} />
+                  <span>
+                    <strong>{p.id}</strong>
+                    <small>
+                      {p.questions.length} groups
+                      {modified !== null && (
+                        <>
+                          {' '}
+                          ·{' '}
+                          {new Date(modified).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </>
+                      )}
+                    </small>
+                  </span>
+                  <span className="row-arrow">›</span>
+                </button>
+              );
+            })}
         {!bank.papers.length && <p className="list-empty">No supported papers found.</p>}
       </div>
       <div className="sidebar-footer">

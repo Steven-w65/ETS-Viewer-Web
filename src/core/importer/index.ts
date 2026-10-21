@@ -1,7 +1,8 @@
 import { Inflate, strFromU8 } from 'fflate';
-import type { Progress, VirtualFile } from '../../types';
+import type { Progress, VirtualFile, VirtualDirectory, VirtualEntry } from '../../types';
 import { baseName, normalizePath } from '../paths';
 import { isMediaPath } from '../media/classify';
+import { zipTimestamp } from '../dates';
 export const LIMITS = {
   entries: 20_000,
   archiveBytes: 128 * 1024 ** 2,
@@ -50,6 +51,7 @@ export function folderFiles(files: readonly File[]): VirtualFile[] {
     // Files remain browser-backed Blobs; media is decoded lazily by its renderer.
     if (total > 1024 * 1024 ** 2)
       throw new Error('Folder size limit (1 GiB) exceeded. Select a smaller bank.');
+    // The picker exposes file timestamps, not their parent directories' dates.
     result.push({ path, blob: file });
   }
   return result;
@@ -72,7 +74,7 @@ export async function readZip(
   blob: Blob,
   progress?: (p: Progress) => void,
   overrides: Partial<Limits> = {},
-): Promise<VirtualFile[]> {
+): Promise<VirtualEntry[]> {
   const limits = { ...LIMITS, ...overrides };
   if (blob.size > limits.archiveBytes)
     throw new Error('ZIP compressed-size limit (128 MiB) exceeded.');
@@ -101,7 +103,8 @@ export async function readZip(
     fail('ZIP64 archives are unsupported');
   if (count > limits.entries) fail('entry-count limit exceeded');
   if (start + size !== end) fail('invalid directory bounds');
-  const seen = new Set<string>();
+  const seen = new Set<string>(),
+    directories: VirtualDirectory[] = [];
   let pos = start,
     total = 0;
   const records: {
@@ -157,8 +160,21 @@ export async function readZip(
       (u32(offset + 14) !== crc || u32(offset + 18) !== compressed || u32(offset + 22) !== original)
     )
       fail('local size or CRC mismatch');
-    if (!directory && (!supportAsset(path) || isMediaPath(path)))
-      records.push({ path, offset: payload, compressed, original, method, crc });
+    if (directory)
+      directories.push({
+        path,
+        directory: true,
+        modified: zipTimestamp(u16(pos + 12), u16(pos + 14)),
+      });
+    else if (!supportAsset(path) || isMediaPath(path))
+      records.push({
+        path,
+        offset: payload,
+        compressed,
+        original,
+        method,
+        crc,
+      });
     pos += 46 + n + extra + comment;
   }
   if (pos !== start + size) fail('directory size mismatch');
@@ -197,5 +213,5 @@ export async function readZip(
     progress?.({ phase: 'Reading files...', completed: index + 1, total: records.length });
     if (index % 20 === 0) await new Promise((resolve) => setTimeout(resolve, 0));
   }
-  return results;
+  return [...directories, ...results];
 }
