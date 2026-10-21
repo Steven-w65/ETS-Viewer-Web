@@ -1,20 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
+import { usePresence } from '../hooks/useMotion';
 export function Toast({ message }: { message: string }) {
   const [text, setText] = useState(message);
-  useEffect(() => {
-    if (message) {
-      setText(message);
-      return;
-    }
-    const timer = setTimeout(
-      () => setText(''),
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180,
-    );
-    return () => clearTimeout(timer);
+  const present = usePresence(!!message, 'overlay');
+  useLayoutEffect(() => {
+    if (message) setText(message);
   }, [message]);
-  return text ? (
+  return present ? (
     <div className={'toast' + (!message ? ' is-leaving' : '')} role="status">
-      {text}
+      {message || text}
     </div>
   ) : null;
 }

@@ -1,4 +1,3 @@
-import { useEffect, useState, type ReactNode } from 'react';
 import type { Question, MediaReference } from '../types';
 import type { ImageResources } from '../core/images';
 import { plainText } from '../core/markup';
@@ -6,54 +5,7 @@ import { RichText } from './RichText';
 import { LocalMedia } from './LocalMedia';
 import { MediaVisibility } from './MediaVisibility';
 import { Icon } from './Icon';
-function Collapse({
-  label,
-  preview,
-  count,
-  children,
-}: {
-  label: string;
-  preview?: string;
-  count?: string;
-  children: ReactNode;
-}) {
-  const [open, setOpen] = useState(false);
-  const [present, setPresent] = useState(false);
-  useEffect(() => {
-    if (open || !present) return;
-    const timer = setTimeout(() => setPresent(false), 200);
-    return () => clearTimeout(timer);
-  }, [open, present]);
-  const toggle = () => {
-    if (!open) setPresent(true);
-    else if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) setPresent(false);
-    setOpen((value) => !value);
-  };
-  return (
-    <div className={'collapse-card ' + (open ? 'is-open' : '')}>
-      <button
-        className="collapse-toggle"
-        aria-label={[label, preview, count].filter(Boolean).join(' ')}
-        aria-expanded={open}
-        onClick={toggle}
-      >
-        <span className="collapse-label">
-          {label}
-          {preview && <span className="collapse-preview">{preview}</span>}
-        </span>
-        {count && <span className="count-label">{count}</span>}
-        <Icon name="chevron" size={16} />
-      </button>
-      <div className="collapse-shell" aria-hidden={!open} inert={!open}>
-        <div className="collapse-inner">
-          <MediaVisibility active={open} retain>
-            {present && <div className="collapse-content">{children}</div>}
-          </MediaVisibility>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { AnimatedDisclosure as Collapse } from './AnimatedDisclosure';
 export function Reader({
   question: q,
   resources,

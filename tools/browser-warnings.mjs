@@ -166,10 +166,10 @@ try {
     'Media failures classified correctly',
   );
   check(
-    (await page.locator('.warning-technical[open]').count()) === 0,
+    (await page.locator('.technical-toggle[aria-expanded="true"]').count()) === 0,
     'Technical details start collapsed',
   );
-  await page.locator('.warning-technical summary').first().click();
+  await page.locator('.technical-toggle').first().click();
   check(
     await dialog
       .getByText('bank/paper/content_1/material/ques1askimg.jpg', { exact: true })
@@ -184,7 +184,7 @@ try {
     );
   }
   check(
-    await dialog.evaluate((el) => getComputedStyle(el).animationDuration === '0.18s'),
+    await dialog.evaluate((el) => getComputedStyle(el).transitionDuration === '0.18s'),
     'Dialog entrance is 180ms',
   );
   await page.screenshot({
@@ -236,7 +236,9 @@ try {
     'Long list scrolls inside the dialog',
   );
   check(
-    await page.locator('.warning-entry').evaluateAll((entries) => entries.every(el => el.scrollWidth <= el.clientWidth)),
+    await page
+      .locator('.warning-entry')
+      .evaluateAll((entries) => entries.every((el) => el.scrollWidth <= el.clientWidth)),
     'Long Unicode path wraps within its entry',
   );
   await page.screenshot({

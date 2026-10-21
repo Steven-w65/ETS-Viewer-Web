@@ -296,7 +296,7 @@ try {
     await page
       .locator('.collapse-shell')
       .first()
-      .evaluate((el) => getComputedStyle(el).transitionDuration === '0.2s'),
+      .evaluate((el) => getComputedStyle(el).transitionDuration.split(',')[0] === '0.2s'),
     'Existing collapse duration remains 200ms',
   );
   if (playable) {

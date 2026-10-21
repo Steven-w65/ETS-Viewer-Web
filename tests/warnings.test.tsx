@@ -71,8 +71,8 @@ it('counts distinct failures, not duplicate diagnostic events, and separates res
       'Some resources could not be loaded. Other questions remain available.',
     ),
   ).toBeVisible();
-  const details = within(dialog).getAllByText('Technical details')[0].closest('details');
-  expect(details).not.toHaveAttribute('open');
+  const details = within(dialog).getAllByRole('button', { name: 'Technical details' })[0];
+  expect(details).toHaveAttribute('aria-expanded', 'false');
 });
 it('distinguishes media failures, keeps missing names truthful, and does not claim an empty bank has valid questions', async () => {
   const user = userEvent.setup();
@@ -134,7 +134,7 @@ it('cycles Tab and Shift+Tab at the dialog focus boundaries', async () => {
   render(<Warnings issues={[missing('a.jpg'), missing('b.jpg')]} hasQuestions />);
   await user.click(screen.getByRole('button', { name: 'View 2 import warnings' }));
   const close = screen.getByRole('button', { name: 'Close import warnings' }),
-    last = screen.getAllByText('Technical details').at(-1)!;
+    last = screen.getAllByRole('button', { name: 'Technical details' }).at(-1)!;
   last.focus();
   await user.tab();
   expect(close).toHaveFocus();

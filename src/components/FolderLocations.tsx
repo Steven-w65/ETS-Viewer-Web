@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { Icon } from './Icon';
+import { AnimatedPanel } from './AnimatedDisclosure';
+import { restoreDisclosureFocus } from '../hooks/useMotion';
 const locations = {
   Windows: {
     path: '%APPDATA%\\ETS',
@@ -18,6 +20,7 @@ export function FolderLocations() {
     [platform, setPlatform] = useState<Platform>('Windows'),
     [copyState, setCopyState] = useState<'idle' | 'copying' | 'copied' | 'failed'>('idle');
   const id = useId(),
+    trigger = useRef<HTMLButtonElement>(null),
     request = useRef(0),
     tabs = useRef<Partial<Record<Platform, HTMLButtonElement | null>>>({});
   const location = locations[platform];
@@ -63,71 +66,82 @@ export function FolderLocations() {
     <section className={'folder-guide' + (open ? ' is-open' : '')}>
       <button
         type="button"
-        className="folder-guide-toggle"
+        className="folder-guide-toggle disclosure-toggle"
+        ref={trigger}
         aria-expanded={open}
         aria-controls={id + '-body'}
         onClick={() => {
           request.current++;
           setCopyState('idle');
+          if (open) restoreDisclosureFocus(id + '-body', trigger.current);
           setOpen(!open);
         }}
       >
         <Icon name="folder" size={16} />
         <span>Where are my question files?</span>
-        <Icon name="chevron" size={14} />
+        <Icon name="chevron" size={16} />
       </button>
-      <div className="folder-guide-shell" id={id + '-body'} aria-hidden={!open} inert={!open}>
-        <div className="folder-guide-inner">
-          <div className="folder-guide-content">
-            <div className="folder-guide-tabs" role="tablist" aria-label="Question bank platform">
-              {platforms.map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  role="tab"
-                  id={id + '-' + name}
-                  aria-selected={platform === name}
-                  aria-controls={id + '-panel'}
-                  tabIndex={platform === name ? 0 : -1}
-                  ref={(node) => {
-                    tabs.current[name] = node;
-                  }}
-                  onClick={() => select(name)}
-                  onKeyDown={move}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-            <div role="tabpanel" id={id + '-panel'} aria-labelledby={id + '-' + platform}>
-              <div className="folder-guide-path">
-                <code>{location.path}</code>
-                <button
-                  type="button"
-                  className="folder-guide-copy"
-                  aria-label={`Copy ${platform} folder path`}
-                  disabled={copyState === 'copying'}
-                  onClick={copy}
-                >
-                  {copyState === 'copied' ? 'Copied' : 'Copy'}
-                </button>
-              </div>
-              <p className="folder-guide-instruction">{location.instruction}</p>
-            </div>
-            <p
-              className={'folder-guide-feedback' + (copyState === 'failed' ? ' is-error' : '')}
-              role="status"
-            >
-              {copyState === 'copied'
-                ? 'Path copied.'
-                : copyState === 'failed'
-                  ? 'Could not copy. Select the path and copy it manually.'
-                  : ''}
-            </p>
-            <p className="folder-guide-disclaimer">Locations may vary by app version and device.</p>
+      <AnimatedPanel
+        className="folder-guide-shell"
+        innerClassName="folder-guide-inner"
+        id={id + '-body'}
+        open={open}
+      >
+        <div className="folder-guide-content">
+          <div className="folder-guide-tabs" role="tablist" aria-label="Question bank platform">
+            {platforms.map((name) => (
+              <button
+                key={name}
+                type="button"
+                role="tab"
+                id={id + '-' + name}
+                aria-selected={platform === name}
+                aria-controls={id + '-panel'}
+                tabIndex={platform === name ? 0 : -1}
+                ref={(node) => {
+                  tabs.current[name] = node;
+                }}
+                onClick={() => select(name)}
+                onKeyDown={move}
+              >
+                {name}
+              </button>
+            ))}
           </div>
+          <div
+            key={platform}
+            className="platform-panel"
+            role="tabpanel"
+            id={id + '-panel'}
+            aria-labelledby={id + '-' + platform}
+          >
+            <div className="folder-guide-path">
+              <code>{location.path}</code>
+              <button
+                type="button"
+                className="folder-guide-copy"
+                aria-label={`Copy ${platform} folder path`}
+                disabled={copyState === 'copying'}
+                onClick={copy}
+              >
+                {copyState === 'copied' ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+            <p className="folder-guide-instruction">{location.instruction}</p>
+          </div>
+          <p
+            className={'folder-guide-feedback' + (copyState === 'failed' ? ' is-error' : '')}
+            role="status"
+          >
+            {copyState === 'copied'
+              ? 'Path copied.'
+              : copyState === 'failed'
+                ? 'Could not copy. Select the path and copy it manually.'
+                : ''}
+          </p>
+          <p className="folder-guide-disclaimer">Locations may vary by app version and device.</p>
         </div>
-      </div>
+      </AnimatedPanel>
     </section>
   );
 }

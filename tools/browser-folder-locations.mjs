@@ -167,6 +167,7 @@ try {
     'Clipboard failure does not claim success',
   );
   await page.getByRole('tab', { name: 'Android' }).click();
+  await page.waitForTimeout(240);
   await page.screenshot({ path: root + '/desktop-' + engine + '.png', animations: 'disabled' });
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 844 });
@@ -193,6 +194,7 @@ try {
     (await page.locator('html').getAttribute('data-theme')) === 'light',
     'Existing Light theme works',
   );
+  await page.waitForTimeout(240);
   await page.screenshot({
     path: root + '/mobile-light-' + engine + '.png',
     animations: 'disabled',

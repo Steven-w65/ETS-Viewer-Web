@@ -1,4 +1,11 @@
 :root {
+  --motion-duration-fast: 140ms;
+  --motion-duration-normal: 200ms;
+  --motion-duration-view: 150ms;
+  --motion-duration-overlay: 180ms;
+  --motion-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --sidebar-width: 288px;
   font-family:
     Inter,
     -apple-system,
@@ -77,8 +84,9 @@ button {
   min-height: 40px;
   padding: 8px 12px;
   transition:
-    background 0.12s,
-    border-color 0.12s;
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard);
 }
 button:hover {
   background: var(--hover);
@@ -161,8 +169,8 @@ h3 {
   border-radius: 6px;
   color: var(--secondary);
   transition:
-    background 120ms ease,
-    color 120ms ease;
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard);
 }
 .github-link:hover {
   color: var(--text);
@@ -206,6 +214,8 @@ h3 {
   flex-shrink: 0;
 }
 .settings-menu {
+  opacity: 1;
+  transition: opacity var(--motion-duration-overlay) var(--motion-ease-standard);
   position: absolute;
   right: 0;
   top: 46px;
@@ -216,6 +226,10 @@ h3 {
   border-radius: 10px;
   box-shadow: 0 8px 24px #00000012;
   z-index: 50;
+}
+.settings-menu.is-leaving {
+  opacity: 0;
+  transition-timing-function: var(--motion-ease-in-out);
 }
 .settings-menu > p {
   font-size: 11px;
@@ -348,30 +362,44 @@ h3 {
 .folder-guide-toggle > span {
   flex: 1;
 }
-.folder-guide-toggle > svg:last-child {
-  transition: transform 200ms ease;
+.disclosure-toggle > svg:last-child {
+  transition: transform var(--motion-duration-normal) var(--motion-ease-standard);
 }
-.folder-guide.is-open .folder-guide-toggle > svg:last-child {
+.is-open > .disclosure-toggle > svg:last-child {
   transform: rotate(180deg);
 }
-.folder-guide-shell {
-  display: grid;
-  grid-template-rows: 0fr;
+.animated-panel {
+  overflow: hidden;
   opacity: 0;
   visibility: hidden;
   transition:
-    grid-template-rows 200ms ease,
-    opacity 200ms ease,
-    visibility 200ms;
+    height var(--motion-duration-normal) var(--motion-ease-standard),
+    opacity var(--motion-duration-normal) var(--motion-ease-standard),
+    visibility 0s var(--motion-duration-normal);
 }
-.folder-guide.is-open .folder-guide-shell {
-  grid-template-rows: 1fr;
+.animated-panel[aria-hidden='false'] {
   opacity: 1;
   visibility: visible;
+  transition-delay: 0s;
 }
-.folder-guide-inner {
+.animated-panel-inner {
+  display: flow-root;
+}
+/* Older engines can still disclose content without size observation. */
+.animated-panel.is-unmeasured {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition-property: grid-template-rows, opacity, visibility;
+}
+.animated-panel.is-unmeasured[aria-hidden='false'] {
+  grid-template-rows: 1fr;
+}
+.is-unmeasured > .animated-panel-inner {
   min-height: 0;
   overflow: hidden;
+}
+.platform-panel {
+  animation: content-enter var(--motion-duration-view) var(--motion-ease-standard);
 }
 .folder-guide-content {
   padding: 0 12px 12px;
@@ -493,12 +521,17 @@ progress {
 }
 .bank-layout {
   display: grid;
-  grid-template-columns: 288px minmax(0, 1fr);
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   flex: 1;
   min-height: 0;
-  transition: grid-template-columns 200ms ease;
+  transition: grid-template-columns var(--motion-duration-normal) var(--motion-ease-standard);
 }
 .sidebar {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--motion-duration-normal) var(--motion-ease-standard),
+    visibility 0s;
   background: var(--sidebar);
   border-right: 1px solid var(--border);
   display: flex;
@@ -506,6 +539,9 @@ progress {
   min-height: 0;
   min-width: 0;
   overflow: hidden;
+}
+.sidebar > * {
+  width: calc(var(--sidebar-width) - 1px);
 }
 .sidebar-heading {
   padding: 26px 22px 16px;
@@ -666,8 +702,9 @@ progress {
   grid-template-columns: 0px minmax(0, 1fr);
 }
 .sidebar-collapsed .sidebar {
+  opacity: 0;
   visibility: hidden;
-  transition: visibility 0s 200ms;
+  transition-delay: 0s, var(--motion-duration-normal);
 }
 .workspace {
   background: var(--workspace);
@@ -827,10 +864,6 @@ progress {
 }
 .collapse-toggle svg {
   color: var(--muted);
-  transition: transform 200ms ease;
-}
-.is-open > .collapse-toggle svg {
-  transform: rotate(180deg);
 }
 .is-open > .collapse-toggle {
   border-bottom: 1px solid var(--border);
@@ -843,18 +876,6 @@ progress {
 }
 .collapse-content {
   padding: 19px 20px 21px;
-}
-.collapse-shell {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 200ms ease;
-}
-.is-open > .collapse-shell {
-  grid-template-rows: 1fr;
-}
-.collapse-inner {
-  min-height: 0;
-  overflow: hidden;
 }
 .option-content {
   min-width: 0;
@@ -877,8 +898,9 @@ video.source-media {
   overflow-wrap: anywhere;
 }
 .reader,
-.nav-list {
-  animation: content-enter 140ms ease;
+.nav-list,
+.overview {
+  animation: content-enter var(--motion-duration-view) var(--motion-ease-standard);
 }
 @keyframes content-enter {
   from {
@@ -1156,31 +1178,18 @@ video.source-media {
 .warning-dialog[open] {
   display: flex;
   flex-direction: column;
-  animation: warning-enter 180ms ease;
+  opacity: 1;
+  transition: opacity var(--motion-duration-overlay) var(--motion-ease-standard);
 }
 .warning-dialog::backdrop {
   background: #0007;
-  animation: warning-enter 180ms ease;
+  opacity: 1;
+  transition: opacity var(--motion-duration-overlay) var(--motion-ease-standard);
 }
 .warning-dialog.is-leaving,
 .warning-dialog.is-leaving::backdrop {
-  animation: warning-exit 180ms ease forwards;
-}
-@keyframes warning-enter {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-@keyframes warning-exit {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
+  opacity: 0;
+  transition-timing-function: var(--motion-ease-in-out);
 }
 .warning-dialog-header {
   display: flex;
@@ -1260,15 +1269,13 @@ video.source-media {
 .warning-candidates code + code {
   margin-top: 5px;
 }
-.warning-technical summary {
+.technical-toggle {
   width: fit-content;
+  min-height: 0;
+  font-size: inherit;
   padding: 4px 0;
   color: var(--secondary);
   cursor: pointer;
-}
-.warning-technical summary:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 3px;
 }
 .warning-technical dl {
   margin-top: 8px;
@@ -1281,7 +1288,11 @@ video.source-media {
   display: none;
 }
 .toast {
-  animation: toast-enter 180ms ease;
+  opacity: 1;
+  translate: 0 0;
+  transition:
+    opacity var(--motion-duration-overlay) var(--motion-ease-standard),
+    translate var(--motion-duration-overlay) var(--motion-ease-standard);
   position: fixed;
   bottom: max(80px, calc(env(safe-area-inset-bottom) + 70px));
   left: 50%;
@@ -1299,27 +1310,25 @@ video.source-media {
   line-height: 1.5;
 }
 .toast.is-leaving {
-  animation: toast-exit 180ms ease forwards;
+  opacity: 0;
+  translate: 0 4px;
+  transition-timing-function: var(--motion-ease-in-out);
 }
-@keyframes toast-enter {
-  from {
+/* Starting styles let CSS reverse an interrupted fade from its current value. */
+@starting-style {
+  .settings-menu,
+  .warning-dialog[open],
+  .warning-dialog[open]::backdrop,
+  .toast {
     opacity: 0;
-    translate: 0 4px;
   }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
-}
-@keyframes toast-exit {
-  to {
-    opacity: 0;
+  .toast {
     translate: 0 4px;
   }
 }
 @media (min-width: 721px) and (max-width: 1000px) {
-  .bank-layout {
-    grid-template-columns: 250px minmax(0, 1fr);
+  :root {
+    --sidebar-width: 250px;
   }
   .reader {
     padding-left: 24px;
@@ -1390,12 +1399,16 @@ video.source-media {
   }
   .sidebar,
   .sidebar-collapsed .sidebar {
+    opacity: 1;
     display: flex;
     visibility: visible;
     transition: none;
     border: 0;
     flex: 1;
     background: var(--workspace);
+  }
+  .sidebar > * {
+    width: auto;
   }
   .sidebar-heading {
     padding: 26px 22px 18px;

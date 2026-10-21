@@ -1,16 +1,17 @@
-# Verification — modular parsing, local media, and welcome help, 2026-10-20
+# Verification — modular parsing, local media, and UI motion, 2026-10-21
 
 ## Executed checks
 
 | Check                             | Result                                                                                                     |
 | --------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Unit/component tests              | 186 passed in 25 files, including media, welcome help, warning dialogs, and independent review regressions |
+| Unit/component tests              | 196 passed in 26 files, including media, welcome help, warnings and motion regressions |
 | TypeScript strict check           | Passed as part of `npm run build`                                                                          |
 | Vite production build             | Passed; static assets and a dedicated import worker generated                                              |
 | Edge 155.0.4283.62                | 47 UI assertions and 32 media checks passed; actual synthetic MP3 and H.264 MP4 playback, MP3 seeking      |
 | Playwright WebKit 27.2 on Windows | 47 UI assertions and 19 media checks passed; native MP3/MP4 unavailable, accurate fallback verified        |
-| Playwright Firefox 157            | Launch blocked by Windows side-by-side runtime configuration; playback unverified                          |
+| Playwright Firefox 157            | Could not launch (`spawn UNKNOWN` in this run); browser behavior unverified                                 |
 | Welcome folder-location guide     | 34 Chromium and 32 WebKit checks passed; native clipboard copy/read verified in Chromium for both paths    |
+| Detailed UI motion                | 45 checks per engine passed in Edge and WebKit, including intermediate frames, reversals and dynamic height |
 | Authorized real-bank regression   | 55 groups, 140 sub-questions, 1,744 stored answers; 5 papers, 795 scanned files                            |
 | Desktop integrity                 | 188 baseline source files checked by SHA-256; 0 changed                                                    |
 
@@ -79,11 +80,13 @@ hostile imported content without script execution or remote requests, and image 
 release on bank change. Screenshot inputs are synthetic records.
 
 Animation assertions verify a 200ms collapse with a measured intermediate height,
-140ms question navigation fade, 200ms sidebar transition, and 180ms toast entry/exit.
+150ms question navigation fade, 200ms sidebar transition, and 180ms toast entry/exit.
 They also check that reduced motion disables transitions and animations, and that a
 desktop-collapsed sidebar remains usable after switching to mobile navigation.
 Component tests verify exiting content is inaccessible and then removed; reduced
-motion removes it immediately. Existing button hover transitions remain 120ms.
+motion removes it immediately. Button hover transitions share a 140ms token.
+Detailed motion implementation, regressions and compatibility limits are documented
+in [ui-motion.md](ui-motion.md).
 
 ## Header import-warning dialog
 

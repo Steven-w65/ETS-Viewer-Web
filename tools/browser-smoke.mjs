@@ -304,14 +304,14 @@ try {
     await page
       .locator('.collapse-shell')
       .last()
-      .evaluate((el) => getComputedStyle(el).transitionDuration === '0.2s'),
+      .evaluate((el) => getComputedStyle(el).transitionDuration.split(',')[0] === '0.2s'),
     'Collapse transition lasts 200ms',
   );
   check(
     await page
       .locator('.reader')
-      .evaluate((el) => getComputedStyle(el).animationDuration === '0.14s'),
-    'Question navigation transition lasts 140ms',
+      .evaluate((el) => getComputedStyle(el).animationDuration === '0.15s'),
+    'Question navigation transition lasts 150ms',
   );
   const heights = await page
     .locator('.part-section')
@@ -395,14 +395,14 @@ try {
   check(
     await page
       .locator('.toast')
-      .evaluate((el) => getComputedStyle(el).animationDuration === '0.18s'),
+      .evaluate((el) => getComputedStyle(el).transitionDuration.split(',')[0] === '0.18s'),
     'Toast enters in 180ms',
   );
   await page.waitForFunction(() => !!document.querySelector('.toast.is-leaving'));
   check(
     await page
       .locator('.toast')
-      .evaluate((el) => getComputedStyle(el).animationDuration === '0.18s'),
+      .evaluate((el) => getComputedStyle(el).transitionDuration.split(',')[0] === '0.18s'),
     'Toast exits in 180ms',
   );
   await page.locator('.toast').waitFor({ state: 'hidden' });

@@ -109,7 +109,11 @@ it('keeps exiting content inaccessible, then removes it after the collapse trans
   await waitFor(() => expect(screen.queryByText('Source key points')).not.toBeInTheDocument());
 });
 it('removes collapsed content immediately when reduced motion is requested', () => {
-  vi.mocked(window.matchMedia).mockReturnValueOnce({ matches: true } as MediaQueryList);
+  const preference = vi.spyOn(window, 'matchMedia').mockReturnValue({
+    matches: true,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  } as unknown as MediaQueryList);
   const q = parseDocument(
     { structure_type: 'collector.picture', info: { value: 'Prompt', keypoint: 'Reduced points' } },
     'bank/p/content.json',
@@ -119,4 +123,5 @@ it('removes collapsed content immediately when reduced motion is requested', () 
   fireEvent.click(toggle);
   fireEvent.click(toggle);
   expect(screen.queryByText('Reduced points')).not.toBeInTheDocument();
+  preference.mockRestore();
 });

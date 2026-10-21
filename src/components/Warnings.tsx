@@ -2,6 +2,8 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Issue } from '../types';
 import { diagnosticReference, importWarnings, issueTitle } from '../core/diagnostics';
 import { Icon } from './Icon';
+import { AnimatedDisclosure } from './AnimatedDisclosure';
+import { motionDuration, useReducedMotion } from '../hooks/useMotion';
 export function Warnings({
   issues,
   hasQuestions,
@@ -19,6 +21,7 @@ export function Warnings({
     close = useRef<HTMLButtonElement>(null),
     id = useId();
   const visible = phase !== 'closed';
+  const reduced = useReducedMotion();
   useEffect(() => {
     setPhase('closed');
     setLimit(100);
@@ -39,12 +42,9 @@ export function Warnings({
   }, [visible]);
   useEffect(() => {
     if (phase !== 'closing') return;
-    const timer = setTimeout(
-      () => setPhase('closed'),
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180,
-    );
+    const timer = setTimeout(() => setPhase('closed'), motionDuration('overlay'));
     return () => clearTimeout(timer);
-  }, [phase]);
+  }, [phase, reduced]);
   if (!warnings.length) return null;
   const count = warnings.length.toLocaleString(),
     noun = warnings.length === 1 ? 'warning' : 'warnings';
@@ -154,8 +154,7 @@ export function Warnings({
                       issue.resolvedPath ||
                       issue.field ||
                       issue.code) && (
-                      <details className="warning-technical">
-                        <summary>Technical details</summary>
+                      <AnimatedDisclosure variant="technical" label="Technical details">
                         <dl>
                           {issue.code && (
                             <>
@@ -192,7 +191,7 @@ export function Warnings({
                             </>
                           )}
                         </dl>
-                      </details>
+                      </AnimatedDisclosure>
                     )}
                   </div>
                 </li>

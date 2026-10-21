@@ -10,6 +10,7 @@ import { Icon } from './components/Icon';
 import { questionKindLabel, type Paper } from './types';
 import { Toast } from './components/Toast';
 import { downloadPaper } from './core/exporter';
+import { usePresence } from './hooks/useMotion';
 export default function App() {
   const state = useBank(),
     { theme, setTheme } = useTheme();
@@ -19,6 +20,7 @@ export default function App() {
     [collapsed, setCollapsed] = useState(false),
     [settings, setSettings] = useState(false),
     [toast, setToast] = useState('');
+  const settingsPresent = usePresence(settings, 'overlay');
   const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 720px)').matches);
   useEffect(() => {
     const query = window.matchMedia('(max-width: 720px)');
@@ -29,7 +31,13 @@ export default function App() {
   const listRef = useRef<HTMLDivElement>(null),
     readingRef = useRef<HTMLDivElement>(null),
     scrolls = useRef(new Map<string, number>()),
-    settingsRef = useRef<HTMLDivElement>(null);
+    settingsRef = useRef<HTMLDivElement>(null),
+    settingsButton = useRef<HTMLButtonElement>(null);
+  const dismissSettings = () => {
+    if (settingsRef.current?.querySelector('.settings-menu')?.contains(document.activeElement))
+      settingsButton.current?.focus();
+    setSettings(false);
+  };
   const bank = state.bank,
     paper = bank?.papers.find((p) => p.key === paperKey),
     question = paper?.questions[index];
@@ -47,10 +55,10 @@ export default function App() {
   useEffect(() => {
     if (!settings) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSettings(false);
+      if (e.key === 'Escape') dismissSettings();
     };
     const outside = (e: PointerEvent) => {
-      if (!settingsRef.current?.contains(e.target as Node)) setSettings(false);
+      if (!settingsRef.current?.contains(e.target as Node)) dismissSettings();
     };
     document.addEventListener('keydown', onKey);
     document.addEventListener('pointerdown', outside);
@@ -130,15 +138,21 @@ export default function App() {
           <div className="settings-wrap" ref={settingsRef}>
             <button
               className="settings-button"
+              ref={settingsButton}
               aria-expanded={settings}
               aria-controls="appearance-settings"
-              onClick={() => setSettings(!settings)}
+              onClick={() => (settings ? dismissSettings() : setSettings(true))}
             >
               <Icon name="settings" size={17} />
               <span>Settings</span>
             </button>
-            {settings && (
-              <div className="settings-menu" id="appearance-settings">
+            {settingsPresent && (
+              <div
+                className={'settings-menu' + (!settings ? ' is-leaving' : '')}
+                id="appearance-settings"
+                aria-hidden={!settings}
+                inert={!settings}
+              >
                 <p>Appearance</p>
                 {(['system', 'light', 'dark'] as const).map((mode) => (
                   <label key={mode}>
