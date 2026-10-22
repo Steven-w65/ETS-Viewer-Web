@@ -1,0 +1,173 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1280"
+  height="400"
+  viewBox="0 0 1280 400"
+  fill="none"
+  role="img"
+  aria-labelledby="title description"
+>
+  <title id="title">Your answers, at hand.</title>
+  <desc id="description">
+    ETS Viewer Web. Open locally, read clearly. A charcoal and sage illustration of reference answer
+    cards, with local processing, folder and ZIP import, and desktop and mobile reading.
+  </desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1280" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111918" />
+      <stop offset="1" stop-color="#172522" />
+    </linearGradient>
+    <radialGradient
+      id="glow"
+      cx="0"
+      cy="0"
+      r="1"
+      gradientTransform="translate(1050 165) rotate(90) scale(350 470)"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop stop-color="#6E9E83" stop-opacity=".16" />
+      <stop offset="1" stop-color="#6E9E83" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="page" x1="813" y1="74" x2="1148" y2="330" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#263C33" />
+      <stop offset="1" stop-color="#1C2A25" />
+    </linearGradient>
+    <linearGradient id="answer" x1="850" y1="206" x2="1110" y2="285" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#375442" />
+      <stop offset="1" stop-color="#2B4235" />
+    </linearGradient>
+    <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#B0C4B7" fill-opacity=".14" />
+    </pattern>
+    <clipPath id="frame"><rect width="1280" height="400" rx="20" /></clipPath>
+  </defs>
+  <g clip-path="url(#frame)">
+    <rect width="1280" height="400" fill="url(#background)" />
+    <rect width="1280" height="400" fill="url(#glow)" />
+    <rect x="745" y="0" width="535" height="400" fill="url(#dots)" />
+    <circle cx="1040" cy="190" r="226" stroke="#91B19B" stroke-opacity=".09" />
+    <circle cx="1040" cy="190" r="173" stroke="#91B19B" stroke-opacity=".07" />
+
+    <g stroke="#B4CEB8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M57 47h9a8 8 0 0 1 8 4v22a9 9 0 0 0-8-3h-9V47Z" />
+      <path d="M91 47h-9a8 8 0 0 0-8 4v22a9 9 0 0 1 8-3h9V47Z" />
+    </g>
+    <g font-family="Segoe UI, Arial, sans-serif">
+      <text x="107" y="65" fill="#B4CEB8" font-size="13" font-weight="600" letter-spacing="2.6">
+        OPEN LOCALLY. READ CLEARLY.
+      </text>
+      <text x="52" y="161" fill="#F4F6F0" font-size="76" font-weight="650" letter-spacing="-3.7">
+        Your answers,
+      </text>
+      <text x="52" y="240" fill="#B4CEB8" font-size="76" font-weight="650" letter-spacing="-3.7">
+        at hand.
+      </text>
+      <text x="57" y="282" fill="#B4BDB8" font-size="19">
+        A focused home for your local ETS question bank.
+      </text>
+
+      <g font-size="12" font-weight="600" letter-spacing=".65">
+        <rect x="56" y="326" width="170" height="32" rx="16" fill="#1C2B24" stroke="#3C5345" />
+        <circle cx="75" cy="342" r="3" fill="#B4CEB8" />
+        <text x="87" y="346" fill="#D0DFD2">LOCAL PROCESSING</text>
+        <rect x="236" y="326" width="124" height="32" rx="16" stroke="#3C4A42" />
+        <text x="256" y="346" fill="#B4BDB8">FOLDER + ZIP</text>
+        <rect x="370" y="326" width="163" height="32" rx="16" stroke="#3C4A42" />
+        <text x="390" y="346" fill="#B4BDB8">DESKTOP + MOBILE</text>
+      </g>
+    </g>
+
+    <g transform="rotate(9 1040 185)">
+      <rect
+        x="886"
+        y="46"
+        width="278"
+        height="270"
+        rx="18"
+        fill="#1D2D26"
+        stroke="#49604E"
+        stroke-opacity=".75"
+      />
+      <path d="M912 80h73M912 98h132" stroke="#5A7563" stroke-width="5" stroke-linecap="round" />
+    </g>
+    <g transform="rotate(-5 977 200)">
+      <rect
+        x="803"
+        y="79"
+        width="343"
+        height="257"
+        rx="18"
+        fill="#0D1512"
+        fill-opacity=".2"
+        transform="translate(0 10)"
+      />
+      <rect x="803" y="73" width="343" height="257" rx="18" fill="url(#page)" stroke="#58705C" />
+      <rect x="827" y="98" width="36" height="28" rx="7" fill="#36503E" />
+      <text x="836" y="117" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#D1E0D1">
+        Q1
+      </text>
+      <path d="M878 107h116M878 119h81" stroke="#6D8973" stroke-width="4" stroke-linecap="round" />
+      <path
+        d="m1108 110 4 4 4-4"
+        stroke="#9CB09E"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M827 148h204M827 166h157"
+        stroke="#849D88"
+        stroke-opacity=".6"
+        stroke-width="5"
+        stroke-linecap="round"
+      />
+      <rect
+        x="825"
+        y="194"
+        width="298"
+        height="112"
+        rx="11"
+        fill="url(#answer)"
+        stroke="#64826A"
+        stroke-opacity=".55"
+      />
+      <path
+        d="m842 216 4 4 7-8"
+        stroke="#BCD7BA"
+        stroke-width="1.7"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <text
+        x="863"
+        y="221"
+        font-family="Segoe UI, Arial, sans-serif"
+        font-size="10"
+        font-weight="600"
+        letter-spacing="1.6"
+        fill="#C3D9BF"
+      >
+        REFERENCE ANSWER
+      </text>
+      <path
+        d="M843 247h230M843 264h192M843 281h131"
+        stroke="#C6D8C5"
+        stroke-opacity=".7"
+        stroke-width="5"
+        stroke-linecap="round"
+      />
+    </g>
+    <g>
+      <circle cx="1134" cy="309" r="35" fill="#B4CEB8" />
+      <circle cx="1134" cy="309" r="43" stroke="#8FAD94" stroke-opacity=".2" />
+      <path
+        d="m1119 309 10 10 19-21"
+        stroke="#253E2C"
+        stroke-width="3.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </g>
+    <rect x=".5" y=".5" width="1279" height="399" rx="19.5" stroke="#829B88" stroke-opacity=".16" />
+  </g>
+</svg>
