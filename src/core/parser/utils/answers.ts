@@ -1,4 +1,4 @@
-import type { StoredAnswer, MediaReference } from '../../../types';
+import type { StoredAnswer, MediaReference, SubQuestion } from '../../../types';
 import type { JsonObject } from '../types';
 import { plainText } from '../../markup';
 import { ParseError } from '../diagnostics';
@@ -44,10 +44,18 @@ export function metadataAnswerMap(metadata: unknown): Map<string, StoredAnswer> 
   }
   return result;
 }
-export function references(info: JsonObject, field: string, allowStrings = false): StoredAnswer[] {
+export function references(
+  info: JsonObject,
+  field: string,
+  allowStrings = false,
+): Pick<SubQuestion, 'answers' | 'firstSourceAnswer'> {
   const result: StoredAnswer[] = [];
+  let firstSourceAnswer: StoredAnswer | undefined;
   const explicit = text(info.answer);
-  if (explicit) result.push({ text: explicit, field: field + '.answer' });
+  if (explicit) {
+    firstSourceAnswer = { text: explicit, field: field + '.answer' };
+    result.push(firstSourceAnswer);
+  }
   for (const key of ['std', 'ref']) {
     const values = info[key];
     if (values == null) continue;
@@ -67,13 +75,11 @@ export function references(info: JsonObject, field: string, allowStrings = false
         );
       const value = text(stringVariant ? row : (row as JsonObject).value);
       const media = stringVariant ? [] : mediaFields(row as JsonObject, `${field}.${key}[${i}]`);
-      const answer = storedAnswer(
-        value,
-        `${field}.${key}[${i}]${stringVariant ? '' : '.value'}`,
-        media,
-      );
+      const answerField = `${field}.${key}[${i}]${stringVariant ? '' : '.value'}`;
+      firstSourceAnswer ??= { text: value, field: answerField, ...(media.length ? { media } : {}) };
+      const answer = storedAnswer(value, answerField, media);
       if (answer) result.push(answer);
     }
   }
-  return result;
+  return { answers: result, ...(firstSourceAnswer ? { firstSourceAnswer } : {}) };
 }

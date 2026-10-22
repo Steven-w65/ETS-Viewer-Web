@@ -16,8 +16,11 @@
   "dependencies": {
     "fflate": "^0.8.2",
     "htmlparser2": "^10.0.0",
+    "i18next": "^26.5.5",
+    "i18next-browser-languagedetector": "^8.2.1",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "react-i18next": "^17.1.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "6.9.1",
@@ -27,9 +30,9 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.4",
     "jsdom": "^27.0.1",
+    "playwright": "^1.62.1",
     "typescript": "^5.9.3",
     "vite": "^7.1.10",
-    "playwright": "^1.62.1",
     "vitest": "^5.0.5"
   },
   "engines": {

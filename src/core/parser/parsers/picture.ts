@@ -13,9 +13,7 @@ export const pictureParser: QuestionTypeParser = {
       !q.media?.some((m) => m.reference)
     )
       throw new ParseError('Picture record has no question content', 'info');
-    q.parts = [
-      context.createPart({ prompt: prompt(info.value), answers: references(info, 'info') }),
-    ];
+    q.parts = [context.createPart({ prompt: prompt(info.value), ...references(info, 'info') })];
     q.topic = text(info.topic);
     q.images = images(info, 'image');
     q.explanation = text(info.analyze);

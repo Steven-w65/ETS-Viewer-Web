@@ -1,19 +1,19 @@
-# Verification — modular parsing, local media, and UI motion, 2026-10-21
+# Verification — modular parsing, local media, UI motion and answer preview, 2026-10-22
 
 ## Executed checks
 
-| Check                             | Result                                                                                                     |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Unit/component tests              | 213 passed in 27 files, including media, welcome help, warnings, motion and folder-date regressions |
-| TypeScript strict check           | Passed as part of `npm run build`                                                                          |
-| Vite production build             | Passed; static assets and a dedicated import worker generated                                              |
+| Check                             | Result                                                                                                          |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Unit/component tests              | 230 passed in 29 files, including media, welcome help, warnings, motion, folder dates and answer preview        |
+| TypeScript strict check           | Passed as part of `npm run build`                                                                               |
+| Vite production build             | Passed; static assets and a dedicated import worker generated                                                   |
 | Edge 155.0.4283.62                | 49 UI assertions passed; prior 32 media checks include actual synthetic MP3 and H.264 MP4 playback, MP3 seeking |
-| Playwright WebKit 27.2 on Windows | 49 UI assertions passed; prior 19 media checks verify fallbacks because native MP3/MP4 is unavailable |
-| Playwright Firefox 157            | Could not launch (`spawn UNKNOWN` in this run); browser behavior unverified                                 |
-| Welcome folder-location guide     | 34 Chromium and 32 WebKit checks passed; native clipboard copy/read verified in Chromium for both paths    |
-| Detailed UI motion                | 45 checks per engine passed in Edge and WebKit, including intermediate frames, reversals and dynamic height |
-| Authorized real-bank regression   | 55 groups, 140 sub-questions, 1,744 stored answers; 5 papers, 795 scanned files                            |
-| Desktop integrity                 | 188 baseline source files checked by SHA-256; 0 changed                                                    |
+| Playwright WebKit 27.2 on Windows | 49 UI assertions passed; prior 19 media checks verify fallbacks because native MP3/MP4 is unavailable           |
+| Playwright Firefox 157            | Could not launch (`spawn UNKNOWN` in this run); browser behavior unverified                                     |
+| Welcome folder-location guide     | 34 Chromium and 32 WebKit checks passed; native clipboard copy/read verified in Chromium for both paths         |
+| Detailed UI motion                | 45 checks per engine passed in Edge and WebKit, including intermediate frames, reversals and dynamic height     |
+| Authorized real-bank regression   | 55 groups, 140 sub-questions, 1,744 stored answers; 5 papers, 795 scanned files                                 |
+| Desktop integrity                 | 188 baseline source files checked by SHA-256; 0 changed                                                         |
 
 The global npm installation on this machine lacks `lru-cache`; project scripts were
 executed with the existing isolated npm copy. No application dependency was added.
@@ -70,6 +70,15 @@ synthetic fixtures and mixed browser imports; the available real bank covers the
 original five collectors.
 
 ## Browser and visual checks
+
+The complete answer-preview implementation and its dedicated browser coverage are
+documented in [answer-preview.md](answer-preview.md).
+Its final dedicated browser checks pass 69 assertions in Edge and 66 in Windows
+WebKit, including actual keyboard scrolling, source-order preservation, action
+alignment at five viewport widths, focus restoration and Reader/media continuity.
+Preview numbers now reset to 1 in each original group, with local heading ranges.
+Regression tests cover repeated-type groups, missing answers without gaps, stable
+entry IDs, and unchanged source/official numbers, regular Reader labels and exports.
 
 The production preview is temporary and local. Both browser engines check ZIP and
 automated folder imports, all eight types in one paper, equivalent-copy counts,

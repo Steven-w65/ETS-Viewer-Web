@@ -23,6 +23,10 @@ function semanticPart(p: SubQuestion) {
     context: p.context,
     options: p.options,
     answers: p.answers.map((a) => ({ text: a.text, media: a.media })),
+    firstSourceAnswer: p.firstSourceAnswer && {
+      text: p.firstSourceAnswer.text,
+      media: p.firstSourceAnswer.media,
+    },
     explanation: p.explanation,
     images: p.images,
     translation: p.translation,
@@ -106,6 +110,12 @@ function mergePart(a: SubQuestion, b: SubQuestion, kind: Question['kind']): SubQ
   merged.supplements = value(left.supplements, right.supplements);
   merged.media = value(left.media, right.media);
   merged.answers = answers(left.answers, right.answers);
+  const first = left.firstSourceAnswer,
+    other = right.firstSourceAnswer;
+  if (first && other && first.text !== other.text) throw new Conflict();
+  if (first || other)
+    merged.firstSourceAnswer =
+      first && other ? { ...first, media: value(first.media, other.media) } : first || other;
   if (!left.options.length || !right.options.length)
     merged.options = value(left.options, right.options);
   else {

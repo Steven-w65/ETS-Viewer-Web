@@ -27,7 +27,7 @@ export function questionList(info: JsonObject, context: ParseContext, allowStrin
       officialNumber: officialNumber(row.ask, context),
       prompt: prompt(row.ask),
       images: images(row, 'askimg'),
-      answers: references(row, field, allowStrings),
+      ...references(row, field, allowStrings),
       explanation: text(row.analyze),
       metadata: harmlessMetadata(row, [
         'xh',

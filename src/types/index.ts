@@ -51,6 +51,8 @@ export interface SubQuestion {
   context: string;
   options: Option[];
   answers: StoredAnswer[];
+  /** First source variant before empty variants are excluded from Reader answers. */
+  firstSourceAnswer?: StoredAnswer;
   explanation: string;
   images: string[];
   translation: string;

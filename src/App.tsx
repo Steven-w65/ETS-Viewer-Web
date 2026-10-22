@@ -11,6 +11,7 @@ import { questionKindLabel, type Paper } from './types';
 import { Toast } from './components/Toast';
 import { downloadPaper } from './core/exporter';
 import { usePresence } from './hooks/useMotion';
+import { AnswerPreview } from './components/AnswerPreview';
 export default function App() {
   const state = useBank(),
     { theme, setTheme } = useTheme();
@@ -216,10 +217,18 @@ export default function App() {
                       <h1>Question {question.id}</h1>
                     </div>
                   </div>
-                  <button className="export-button" aria-label="Export Paper" onClick={exportPaper}>
-                    <Icon name="download" size={16} />
-                    <span>Export Paper</span>
-                  </button>
+                  <div className="paper-actions">
+                    <AnswerPreview key={paper.key} paper={paper} />
+                    <button
+                      className="export-button"
+                      aria-label="Export Paper"
+                      title="Export Paper"
+                      onClick={exportPaper}
+                    >
+                      <Icon name="download" size={16} />
+                      <span>Export Paper</span>
+                    </button>
+                  </div>
                 </div>
                 <div className="reading-scroll" ref={readingRef}>
                   {state.resources && (

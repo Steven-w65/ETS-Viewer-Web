@@ -753,6 +753,147 @@ progress {
   flex-shrink: 0;
   color: var(--secondary);
 }
+.paper-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+.answer-preview-dialog {
+  width: 720px;
+  max-width: calc(100% - 32px);
+  max-height: min(800px, calc(100dvh - 32px));
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  color: var(--text);
+  background: var(--workspace);
+}
+.answer-preview-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  opacity: 1;
+  transition: opacity var(--motion-duration-overlay) var(--motion-ease-standard);
+}
+.answer-preview-dialog::backdrop {
+  background: #0007;
+  opacity: 1;
+  transition: opacity var(--motion-duration-overlay) var(--motion-ease-standard);
+}
+.answer-preview-dialog.is-leaving,
+.answer-preview-dialog.is-leaving::backdrop {
+  opacity: 0;
+  transition-timing-function: var(--motion-ease-in-out);
+}
+.answer-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.answer-preview-header h2 {
+  font-size: 18px;
+  line-height: 1.4;
+  margin: 0 0 4px;
+}
+.answer-preview-header p {
+  color: var(--secondary);
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.answer-preview-header .icon-button {
+  margin: -4px -8px 0 0;
+}
+.answer-preview-body {
+  padding: 18px 20px 22px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.answer-preview-body:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -3px;
+}
+.preview-empty {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0 0 14px;
+}
+.preview-group + .preview-group {
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+  padding-top: 18px;
+}
+.preview-group h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--secondary);
+  line-height: 1.6;
+  margin: 0 0 12px;
+  overflow-wrap: anywhere;
+}
+.preview-number {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.preview-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+}
+.preview-choices .preview-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+.preview-choices .preview-number {
+  flex-shrink: 0;
+  max-width: 5em;
+}
+.preview-choice-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  font-weight: 600;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.preview-choice-box.is-single-choice {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+}
+.preview-text-list .preview-entry {
+  display: grid;
+  grid-template-columns: 3em minmax(0, 1fr);
+  gap: 8px;
+}
+.preview-text-list .preview-entry + .preview-entry {
+  margin-top: 9px;
+}
+.preview-answer {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .mobile-back {
   display: none;
 }
@@ -1317,6 +1458,8 @@ video.source-media {
 /* Starting styles let CSS reverse an interrupted fade from its current value. */
 @starting-style {
   .settings-menu,
+  .answer-preview-dialog[open],
+  .answer-preview-dialog[open]::backdrop,
   .warning-dialog[open],
   .warning-dialog[open]::backdrop,
   .toast {
@@ -1349,6 +1492,25 @@ video.source-media {
   }
 }
 @media (max-width: 720px) {
+  .answer-preview-dialog {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    margin: 0;
+  }
+  .answer-preview-header {
+    padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+  }
+  .answer-preview-body {
+    flex: 1;
+    padding: 16px 16px max(20px, env(safe-area-inset-bottom));
+  }
+  .paper-actions {
+    gap: 6px;
+  }
   .app-header {
     height: 56px;
     flex-basis: 56px;
