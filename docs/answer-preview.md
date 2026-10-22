@@ -62,6 +62,9 @@ values wrap/grow rather than being reduced to one letter.
 | Other collectors     | Question Group      |
 
 Labels are centralized for preview presentation and ignore regional display titles.
+The selector exposes structural translation keys; the dialog renders those keys in
+the selected interface language. The table above lists the initial English labels.
+See [internationalization](i18n.md) for locale registration and matching.
 The normalized model does not reliably separate word and sentence tasks, so the
 combined label is used. Stored answers and paper names are never translated.
 Existing parser semantics remain authoritative, including answerless word/reading

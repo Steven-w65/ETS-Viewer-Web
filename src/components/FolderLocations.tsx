@@ -1,21 +1,22 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Icon } from './Icon';
 import { AnimatedPanel } from './AnimatedDisclosure';
 import { restoreDisclosureFocus } from '../hooks/useMotion';
 const locations = {
   Windows: {
     path: '%APPDATA%\\ETS',
-    instruction: 'Press Win + R, paste the path, and press Enter.',
+    instruction: 'folderGuide.windowsInstruction',
   },
   Android: {
     path: '/storage/emulated/0/Android/data/com.ets100.secondary/files/Download/ETS_SECONDARY/resource',
-    instruction:
-      'Android may restrict access to this folder. If necessary, import an accessible copy or ZIP archive.',
+    instruction: 'folderGuide.androidInstruction',
   },
 };
 const platforms = ['Windows', 'Android'] as const;
 type Platform = (typeof platforms)[number];
 export function FolderLocations() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false),
     [platform, setPlatform] = useState<Platform>('Windows'),
     [copyState, setCopyState] = useState<'idle' | 'copying' | 'copied' | 'failed'>('idle');
@@ -78,7 +79,7 @@ export function FolderLocations() {
         }}
       >
         <Icon name="folder" size={16} />
-        <span>Where are my question files?</span>
+        <span>{t('folderGuide.title')}</span>
         <Icon name="chevron" size={16} />
       </button>
       <AnimatedPanel
@@ -88,7 +89,11 @@ export function FolderLocations() {
         open={open}
       >
         <div className="folder-guide-content">
-          <div className="folder-guide-tabs" role="tablist" aria-label="Question bank platform">
+          <div
+            className="folder-guide-tabs"
+            role="tablist"
+            aria-label={t('folderGuide.platformLabel')}
+          >
             {platforms.map((name) => (
               <button
                 key={name}
@@ -104,7 +109,7 @@ export function FolderLocations() {
                 onClick={() => select(name)}
                 onKeyDown={move}
               >
-                {name}
+                {t(`folderGuide.platform.${name}`)}
               </button>
             ))}
           </div>
@@ -120,26 +125,34 @@ export function FolderLocations() {
               <button
                 type="button"
                 className="folder-guide-copy"
-                aria-label={`Copy ${platform} folder path`}
+                aria-label={t('folderGuide.copyLabel', {
+                  platform: t(`folderGuide.platform.${platform}`),
+                })}
                 disabled={copyState === 'copying'}
                 onClick={copy}
               >
-                {copyState === 'copied' ? 'Copied' : 'Copy'}
+                {t(
+                  copyState === 'copied'
+                    ? 'folderGuide.copied'
+                    : copyState === 'copying'
+                      ? 'folderGuide.copying'
+                      : 'folderGuide.copy',
+                )}
               </button>
             </div>
-            <p className="folder-guide-instruction">{location.instruction}</p>
+            <p className="folder-guide-instruction">{t(location.instruction)}</p>
           </div>
           <p
             className={'folder-guide-feedback' + (copyState === 'failed' ? ' is-error' : '')}
             role="status"
           >
             {copyState === 'copied'
-              ? 'Path copied.'
+              ? t('folderGuide.copySuccess')
               : copyState === 'failed'
-                ? 'Could not copy. Select the path and copy it manually.'
+                ? t('folderGuide.copyFailure')
                 : ''}
           </p>
-          <p className="folder-guide-disclaimer">Locations may vary by app version and device.</p>
+          <p className="folder-guide-disclaimer">{t('folderGuide.disclaimer')}</p>
         </div>
       </AnimatedPanel>
     </section>

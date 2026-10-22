@@ -51,7 +51,13 @@ export function plainText(value: string): string {
 }
 const MAX_FRAGMENT_NODES = 20_000;
 /** Allowlist AST with a plain-text fallback for excessive formatting complexity. */
-export function parseFragment(value: string): { nodes: FragmentNode[]; limited: boolean } {
+export function parseFragment(
+  value: string,
+  referenceLabel: (kind: 'image' | 'audio' | 'video' | 'media', reference: string) => string = (
+    kind,
+    reference,
+  ) => `${kind === 'image' ? 'Image' : kind === 'media' ? 'Media' : kind} reference: ${reference}`,
+): { nodes: FragmentNode[]; limited: boolean } {
   const root: FragmentNode[] = [];
   const stack: { tag: string; nodes: FragmentNode[] }[] = [{ tag: '', nodes: root }];
   const fallback: string[] = [];
@@ -72,26 +78,27 @@ export function parseFragment(value: string): { nodes: FragmentNode[]; limited: 
         }
         if (suppressed) return;
         if (tag === 'audio' || tag === 'video') {
-          if (mediaStack.length || !canAdd()) return;
+          if (mediaStack.length) return;
           const node: Extract<FragmentNode, { type: 'media' }> = {
             type: 'media',
             kind: tag,
             references: attrs.src ? [attrs.src] : [],
           };
-          stack.at(-1)!.nodes.push(node);
+          if (canAdd()) stack.at(-1)!.nodes.push(node);
           mediaStack.push({ tag, node });
-          if (attrs.src) fallback.push(`\n${tag} reference: ${attrs.src}\n`);
+          if (attrs.src) fallback.push('\n' + referenceLabel(tag, attrs.src) + '\n');
           return;
         }
         if (mediaStack.length) {
           if (tag === 'source' && attrs.src) {
             mediaStack.at(-1)!.node.references.push(attrs.src);
-            fallback.push('\nMedia reference: ' + attrs.src + '\n');
+            fallback.push('\n' + referenceLabel('media', attrs.src) + '\n');
           }
           return;
         }
         if (blocks.has(tag)) fallback.push('\n');
-        if (tag === 'img' && attrs.src) fallback.push('\nImage reference: ' + attrs.src + '\n');
+        if (tag === 'img' && attrs.src)
+          fallback.push('\n' + referenceLabel('image', attrs.src) + '\n');
         if (limited) return;
         const current = stack[stack.length - 1].nodes;
         if (tag === 'img') {

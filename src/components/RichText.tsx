@@ -1,4 +1,5 @@
 import { createElement, useMemo, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LocalMedia } from './LocalMedia';
 import { parseFragment, type FragmentNode } from '../core/markup';
 import type { ImageResources } from '../core/images';
@@ -125,8 +126,11 @@ function nodesToReact(
   });
 }
 export function RichText({ value, source, resources, dialogue = false }: RichProps) {
+  const { t } = useTranslation();
   const { content, limited } = useMemo(() => {
-    const { nodes, limited } = parseFragment(value);
+    const { nodes, limited } = parseFragment(value, (kind, reference) =>
+      t(`markup.${kind}Reference`, { reference }),
+    );
     const content =
       dialogue &&
       !limited &&
@@ -137,12 +141,12 @@ export function RichText({ value, source, resources, dialogue = false }: RichPro
         ? dialogueLines(nodes, source, resources)
         : nodesToReact(nodes, source, resources, dialogue && !limited);
     return { content, limited };
-  }, [value, source, resources, dialogue]);
+  }, [value, source, resources, dialogue, t]);
   return (
     <div className="rich-text">
       {limited && (
         <p className="formatting-note" role="status">
-          Formatting limit reached. Showing the original text with image references.
+          {t('reader.formattingLimit')}
         </p>
       )}
       {content}

@@ -59,6 +59,8 @@ export function importWarnings(issues: Issue[]): Issue[] {
       issue.questionId,
       issue.severity || 'warning',
       issue.code,
+      issue.messageKey,
+      issue.messageParams,
       issue.category,
       issue.mediaKind,
       issue.reference,

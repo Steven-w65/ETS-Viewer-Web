@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:i18n": "vitest run i18n",
     "test:browser": "node tools/browser-smoke.mjs",
     "test:media": "node tools/browser-media.mjs",
     "test:parity": "node tools/check-parity.mjs"

@@ -4,10 +4,12 @@ import { bankName } from '../core/paths';
 import { ImageResources } from '../core/images';
 import type { Bank, Progress } from '../types';
 import type { ImportRequest } from '../workers/import.worker';
+import { importErrorMessage, type ImportMessage } from '../i18n/importMessages';
 export function useBank() {
   const [bank, setBank] = useState<Bank | null>(null),
     [progress, setProgress] = useState<Progress | null>(null),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [errorDescriptor, setErrorDescriptor] = useState<ImportMessage | null>(null);
   const worker = useRef<Worker | null>(null),
     resources = useRef<ImageResources | null>(null);
   const stop = () => {
@@ -24,6 +26,7 @@ export function useBank() {
   function start(request: ImportRequest) {
     stop();
     setError('');
+    setErrorDescriptor(null);
     setProgress({ phase: 'Reading files...', completed: 0, total: 0 });
     try {
       const w = new Worker(new URL('../workers/import.worker.ts', import.meta.url), {
@@ -42,6 +45,7 @@ export function useBank() {
         }
         if (data.type === 'error') {
           setError(data.message);
+          setErrorDescriptor(data.messageDescriptor ?? importErrorMessage(data.message));
           setProgress(null);
           stop();
         }
@@ -49,12 +53,14 @@ export function useBank() {
       w.onerror = () => {
         if (worker.current !== w) return;
         setError('The import worker could not complete. Try a smaller bank or a current browser.');
+        setErrorDescriptor({ key: 'import.errors.worker' });
         setProgress(null);
         stop();
       };
       w.postMessage(request);
     } catch {
       setError('This browser could not start local processing. Try a current browser.');
+      setErrorDescriptor({ key: 'import.errors.browser' });
       setProgress(null);
       stop();
     }
@@ -63,6 +69,7 @@ export function useBank() {
     bank,
     progress,
     error,
+    errorDescriptor,
     resources: resources.current,
     importFolder(files: File[]) {
       if (!files.length) return;
@@ -77,7 +84,9 @@ export function useBank() {
           ),
         });
       } catch (e) {
-        setError((e as Error).message);
+        const message = e instanceof Error ? e.message : 'Unable to import this bank.';
+        setError(message);
+        setErrorDescriptor(importErrorMessage(message));
       }
     },
     importZip(file: File) {
@@ -93,6 +102,7 @@ export function useBank() {
       resources.current = null;
       setBank(null);
       setError('');
+      setErrorDescriptor(null);
       setProgress(null);
     },
   };

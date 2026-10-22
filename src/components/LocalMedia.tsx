@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { classifyMedia } from '../core/media/classify';
 import { MediaError, mediaError, type MediaKind } from '../core/media/types';
 import { MediaResources, type MediaLease } from '../core/media/resources';
@@ -22,6 +23,7 @@ export function LocalMedia({
   resources: MediaResources;
   fallbackKind?: MediaKind;
 }) {
+  const { t } = useTranslation();
   const { active, present } = useMediaVisible(),
     [lease, setLease] = useState<MediaLease | null>(null),
     [failed, setFailed] = useState<{ kind: MediaKind; unsupported?: boolean } | null>(null),
@@ -88,23 +90,24 @@ export function LocalMedia({
     return () => document.removeEventListener('visibilitychange', hidden);
   }, [lease, resources, ref, source, attempt, count]);
   if (!present) return null;
-  const suffix =
-    ref.length <= 120 && !/[\\/:]/.test(ref) && !ref.startsWith('..') ? ': ' + ref : '';
+  const showFilename = ref.length <= 120 && !/[\\/:]/.test(ref) && !ref.startsWith('..');
   if (failed) {
-    const kind = failed.kind === 'unknown' ? fallbackKind : failed.kind,
-      label = kind[0].toUpperCase() + kind.slice(1);
+    const kind = failed.kind === 'unknown' ? fallbackKind : failed.kind;
     return (
       <span className="image-fallback media-fallback" role="status">
         {failed.unsupported
-          ? `This ${kind} format is not supported by your browser`
-          : `${label} unavailable${suffix}`}
+          ? t('media.unsupported', { kind: t('diagnostics.kindLower.' + kind) })
+          : t(showFilename ? 'media.unavailableWithName' : 'media.unavailable', {
+              kind: t('diagnostics.kind.' + kind),
+              filename: ref,
+            })}
       </span>
     );
   }
   if (!lease)
     return (
       <span className="image-fallback" role="status">
-        Loading media…
+        {t('media.loading')}
       </span>
     );
   const onError = () => {
@@ -145,7 +148,10 @@ export function LocalMedia({
     controls: true,
     preload: 'metadata' as const,
     onError,
-    'aria-label': `${lease.kind === 'audio' ? 'Audio' : 'Video'}: ${reference}`,
+    'aria-label': t('media.label', {
+      kind: t('diagnostics.kind.' + lease.kind),
+      filename: reference,
+    }),
     ref: (node: HTMLMediaElement | null) => {
       if (node) element.current = node;
     },

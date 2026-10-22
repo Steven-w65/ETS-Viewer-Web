@@ -43,17 +43,17 @@ const paper = (questions: Question[]): Paper => ({
   modified: null,
 });
 
-it('uses simple structural labels for all types and a neutral unknown label', () => {
+it('returns structural translation keys for all types and a neutral unknown key', () => {
   const labels = {
-    choose: 'Multiple Choice',
-    word: 'Word / Sentence',
-    fill: 'Fill in the Blanks',
-    dialogue: 'Dialogue',
-    role: 'Role-play',
-    '3q5a': 'Questions & Answers',
-    picture: 'Picture Description',
-    read: 'Reading',
-    unknown: 'Question Group',
+    choose: 'questionTypes.multipleChoice',
+    word: 'questionTypes.wordSentence',
+    fill: 'questionTypes.fillBlanks',
+    dialogue: 'questionTypes.dialogue',
+    role: 'questionTypes.rolePlay',
+    '3q5a': 'questionTypes.questionsAnswers',
+    picture: 'questionTypes.pictureDescription',
+    read: 'questionTypes.reading',
+    unknown: 'questionTypes.unknown',
   };
   const groups = Object.keys(labels).map((type) => group(`collector.${type}`, [part('1')], type));
   expect(selectAnswerPreview(paper(groups)).map((g) => g.label)).toEqual(Object.values(labels));

@@ -1,4 +1,5 @@
 import type { Question, MediaReference } from '../types';
+import { useTranslation } from 'react-i18next';
 import type { ImageResources } from '../core/images';
 import { plainText } from '../core/markup';
 import { RichText } from './RichText';
@@ -15,6 +16,10 @@ export function Reader({
   resources: ImageResources;
   active?: boolean;
 }) {
+  const { t } = useTranslation();
+  // These two labels are authored by the parsers. Other labels belong to the source bank.
+  const supplementLabel = (value: string) =>
+    value === 'Context' ? t('reader.context') : value === 'Keywords' ? t('reader.keywords') : value;
   const rich = (value: string, dialogue = false) => (
     <RichText value={value} source={q.source} resources={resources} dialogue={dialogue} />
   );
@@ -38,13 +43,14 @@ export function Reader({
         fallbackKind={m.kind}
       />
     ));
-  const label = (i: number) => 'Q' + (q.parts[i].officialNumber || q.parts[i].number || i + 1);
+  const label = (i: number) =>
+    t('reader.partLabel', { number: q.parts[i].officialNumber || q.parts[i].number || i + 1 });
   return (
     <MediaVisibility active={active}>
-      <article className="reader" aria-label="Question and reference answers">
+      <article className="reader" aria-label={t('reader.region')}>
         {q.parts.length > 1 && (
-          <nav className="part-nav" aria-label="Sub-questions">
-            <span>Jump to</span>
+          <nav className="part-nav" aria-label={t('reader.subquestions')}>
+            <span>{t('reader.jumpTo')}</span>
             {q.parts.map((_, i) => (
               <button
                 key={i}
@@ -70,25 +76,25 @@ export function Reader({
           !!q.media?.length) && (
           <div className="shared-material">
             <Collapse
-              label="Shared Material"
+              label={t('reader.sharedMaterial')}
               preview={
                 q.context
-                  ? 'Passage, transcript & context'
+                  ? t('reader.passagePreview')
                   : q.images.length
-                    ? 'Images & context'
-                    : 'Instructions'
+                    ? t('reader.imagesPreview')
+                    : t('reader.instructions')
               }
             >
               {q.instructions && (
                 <section>
-                  <h3>Instructions</h3>
+                  <h3>{t('reader.instructions')}</h3>
                   {rich(q.instructions)}
                 </section>
               )}
               {q.context && rich(q.context, true)}
               {q.sharedMaterials?.map((material, i) => (
                 <section key={i}>
-                  <h3>{material.label}</h3>
+                  <h3>{supplementLabel(material.label)}</h3>
                   {rich(material.text, true)}
                   {imgs(material.images || [])}
                   {media(material.media)}
@@ -116,13 +122,13 @@ export function Reader({
               <span> / {q.parts.length}</span>
             </h2>
             <Collapse
-              label="Question"
-              preview={plainText(p.prompt || p.context).slice(0, 240) || 'View original question'}
+              label={t('reader.question')}
+              preview={plainText(p.prompt || p.context).slice(0, 240) || t('reader.viewOriginal')}
             >
               {p.prompt && rich(p.prompt)}
               {p.context && (
                 <section className="transcript">
-                  <h3>Transcript</h3>
+                  <h3>{t('reader.transcript')}</h3>
                   {rich(p.context, true)}
                 </section>
               )}
@@ -130,7 +136,7 @@ export function Reader({
               {media(p.media)}
               {p.supplements?.map((supplement, j) => (
                 <section key={j}>
-                  <h3>{supplement.label}</h3>
+                  <h3>{supplementLabel(supplement.label)}</h3>
                   {rich(supplement.text)}
                   {imgs(supplement.images || [])}
                   {media(supplement.media)}
@@ -138,7 +144,7 @@ export function Reader({
               ))}
               {p.options.length > 0 && (
                 <section>
-                  <h3>Options</h3>
+                  <h3>{t('reader.options')}</h3>
                   <div className="options">
                     {p.options.map((o, j) => (
                       <div className="option" key={j}>
@@ -154,12 +160,18 @@ export function Reader({
               )}
             </Collapse>
             <div className={'answer-card ' + (!p.answers.length ? 'answer-missing' : '')}>
-              <h3>{p.answers.length > 0 && <Icon name="check" size={16} />}REFERENCE ANSWER</h3>
-              {p.answers.length ? rich(p.answers[0].text) : <p>Answer not found</p>}
+              <h3>
+                {p.answers.length > 0 && <Icon name="check" size={16} />}
+                {t('reader.referenceAnswer')}
+              </h3>
+              {p.answers.length ? rich(p.answers[0].text) : <p>{t('reader.answerMissing')}</p>}
               {p.answers.length > 0 && media(p.answers[0].media)}
             </div>
             {p.answers.length > 1 && (
-              <Collapse label="Additional Reference Answers" count={`${p.answers.length - 1} more`}>
+              <Collapse
+                label={t('reader.additionalAnswers')}
+                count={t('reader.additionalCount', { count: p.answers.length - 1 })}
+              >
                 <div className="additional-answers">
                   {p.answers.slice(1).map((a, j) => (
                     <div key={j}>
@@ -172,22 +184,24 @@ export function Reader({
             )}
             {p.translation && (
               <div className="supplement">
-                <h3>Translation</h3>
+                <h3>{t('reader.translation')}</h3>
                 {rich(p.translation)}
               </div>
             )}
-            {p.explanation && <Collapse label="Explanation">{rich(p.explanation)}</Collapse>}
+            {p.explanation && (
+              <Collapse label={t('reader.explanation')}>{rich(p.explanation)}</Collapse>
+            )}
           </section>
         ))}
         {(q.keyPoints || q.explanation) && (
           <div className="group-supplements">
-            {q.keyPoints && <Collapse label="Key Points">{rich(q.keyPoints)}</Collapse>}
-            {q.explanation && <Collapse label="Explanation">{rich(q.explanation)}</Collapse>}
+            {q.keyPoints && <Collapse label={t('reader.keyPoints')}>{rich(q.keyPoints)}</Collapse>}
+            {q.explanation && (
+              <Collapse label={t('reader.explanation')}>{rich(q.explanation)}</Collapse>
+            )}
           </div>
         )}
-        <p className="reader-footnote">
-          Reference answers are shown exactly as stored in your bank.
-        </p>
+        <p className="reader-footnote">{t('reader.sourceNote')}</p>
       </article>
     </MediaVisibility>
   );

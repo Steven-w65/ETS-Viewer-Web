@@ -191,13 +191,13 @@ it('shows only the folder date after the group count and omits unknown dates', a
     navigation({ ...bank, papers: [{ ...bank.papers[0], modified: folderDate }] }),
   );
   expect(screen.getByRole('button', { name: /paper/ }).querySelector('small')).toHaveTextContent(
-    '1 groups · Oct 19, 2026',
+    '1 group · Oct 19, 2026',
   );
   expect(screen.queryByText(/updated/i)).toBeNull();
   for (const modified of [null, NaN, Infinity, 9e15]) {
     view.rerender(navigation({ ...bank, papers: [{ ...bank.papers[0], modified }] }));
     expect(screen.getByRole('button', { name: /paper/ }).querySelector('small')).toHaveTextContent(
-      /^1 groups$/,
+      /^1 group$/,
     );
     expect(screen.queryByText(/Date unavailable/i)).toBeNull();
   }

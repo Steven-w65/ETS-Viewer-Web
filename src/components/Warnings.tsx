@@ -1,6 +1,8 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Issue } from '../types';
-import { diagnosticReference, importWarnings, issueTitle } from '../core/diagnostics';
+import { diagnosticReference, importWarnings } from '../core/diagnostics';
+import { useTranslation } from 'react-i18next';
+import { translatedIssueTitle } from '../i18n/diagnostics';
 import { Icon } from './Icon';
 import { AnimatedDisclosure } from './AnimatedDisclosure';
 import { motionDuration, useReducedMotion } from '../hooks/useMotion';
@@ -13,6 +15,7 @@ export function Warnings({
   hasQuestions: boolean;
   onOpen?: () => void;
 }) {
+  const { t, i18n } = useTranslation();
   const warnings = useMemo(() => importWarnings(issues), [issues]);
   const [phase, setPhase] = useState<'closed' | 'open' | 'closing'>('closed'),
     [limit, setLimit] = useState(100);
@@ -46,8 +49,7 @@ export function Warnings({
     return () => clearTimeout(timer);
   }, [phase, reduced]);
   if (!warnings.length) return null;
-  const count = warnings.length.toLocaleString(),
-    noun = warnings.length === 1 ? 'warning' : 'warnings';
+  const count = warnings.length.toLocaleString(i18n.resolvedLanguage);
   const dismiss = () => setPhase('closing');
   return (
     <>
@@ -55,7 +57,7 @@ export function Warnings({
         type="button"
         ref={trigger}
         className="warnings-button"
-        aria-label={`View ${count} import ${noun}`}
+        aria-label={t('warnings.view', { count: warnings.length })}
         aria-haspopup="dialog"
         aria-controls={id}
         onClick={() => {
@@ -95,16 +97,14 @@ export function Warnings({
       >
         <div className="warning-dialog-header">
           <div>
-            <h2 id={id + '-title'}>Import warnings</h2>
-            <p>
-              {count} {noun}
-            </p>
+            <h2 id={id + '-title'}>{t('warnings.title')}</h2>
+            <p>{t('warnings.count', { count: warnings.length })}</p>
           </div>
           <button
             type="button"
             className="icon-button"
             ref={close}
-            aria-label="Close import warnings"
+            aria-label={t('warnings.close')}
             onClick={dismiss}
           >
             <Icon name="close" />
@@ -113,22 +113,26 @@ export function Warnings({
         <div className="warning-dialog-body">
           {hasQuestions && (
             <p id={id + '-intro'} className="warning-dialog-intro">
-              Some resources could not be loaded. Other questions remain available.
+              {t('warnings.intro')}
             </p>
           )}
-          <ul className="warning-list" aria-label="Import warning details">
+          <ul className="warning-list" aria-label={t('warnings.details')}>
             {warnings.slice(0, limit).map((issue, i) => {
               const reference = diagnosticReference(issue);
               return (
                 <li key={i}>
                   <Icon name="warning" size={16} />
                   <div className="warning-entry">
-                    <h3>{issueTitle(issue)}</h3>
+                    <h3>{translatedIssueTitle(issue, t)}</h3>
                     <dl>
                       {reference && (
                         <>
                           <dt>
-                            {issue.category === 'file_not_found' ? 'Missing file' : 'Resource'}
+                            {t(
+                              issue.category === 'file_not_found'
+                                ? 'warnings.missingFile'
+                                : 'warnings.resource',
+                            )}
                           </dt>
                           <dd>
                             <code>{reference}</code>
@@ -137,28 +141,28 @@ export function Warnings({
                       )}
                       {!reference && issue.category && (
                         <>
-                          <dt>Resource</dt>
+                          <dt>{t('warnings.resource')}</dt>
                           <dd>
                             {issue.category === 'unsafe_path'
-                              ? 'The unsafe reference was withheld.'
-                              : 'The referenced resource could not be identified.'}
+                              ? t('warnings.unsafeWithheld')
+                              : t('warnings.unidentified')}
                           </dd>
                         </>
                       )}
-                      <dt>Source</dt>
+                      <dt>{t('warnings.source')}</dt>
                       <dd>
-                        <code>{issue.path || 'Source record unavailable'}</code>
+                        <code>{issue.path || t('warnings.noSource')}</code>
                       </dd>
                     </dl>
                     {(!!issue.candidates?.length ||
                       issue.resolvedPath ||
                       issue.field ||
                       issue.code) && (
-                      <AnimatedDisclosure variant="technical" label="Technical details">
+                      <AnimatedDisclosure variant="technical" label={t('warnings.technical')}>
                         <dl>
                           {issue.code && (
                             <>
-                              <dt>Code</dt>
+                              <dt>{t('warnings.code')}</dt>
                               <dd>
                                 <code>{issue.code}</code>
                               </dd>
@@ -166,7 +170,7 @@ export function Warnings({
                           )}
                           {issue.field && (
                             <>
-                              <dt>Source field</dt>
+                              <dt>{t('warnings.field')}</dt>
                               <dd>
                                 <code>{issue.field}</code>
                               </dd>
@@ -174,7 +178,7 @@ export function Warnings({
                           )}
                           {issue.resolvedPath && (
                             <>
-                              <dt>Resolved file</dt>
+                              <dt>{t('warnings.resolved')}</dt>
                               <dd>
                                 <code>{issue.resolvedPath}</code>
                               </dd>
@@ -182,7 +186,7 @@ export function Warnings({
                           )}
                           {!!issue.candidates?.length && (
                             <>
-                              <dt>Attempted paths</dt>
+                              <dt>{t('warnings.attempted')}</dt>
                               <dd className="warning-candidates">
                                 {issue.candidates.map((path) => (
                                   <code key={path}>{path}</code>
@@ -201,10 +205,13 @@ export function Warnings({
           {limit < warnings.length && (
             <>
               <p className="warning-dialog-intro">
-                Showing {limit.toLocaleString()} of {count} warnings.
+                {t('warnings.showing', {
+                  shown: limit.toLocaleString(i18n.resolvedLanguage),
+                  count: warnings.length,
+                })}
               </p>
               <button type="button" onClick={() => setLimit((n) => n + 100)}>
-                Show more warnings
+                {t('warnings.more')}
               </button>
             </>
           )}

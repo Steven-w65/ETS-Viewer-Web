@@ -1,16 +1,6 @@
 import { Parser } from 'htmlparser2';
 import type { Paper, SubQuestion } from '../types';
-
-export const PREVIEW_TYPE_LABELS: Readonly<Record<string, string>> = {
-  'collector.choose': 'Multiple Choice',
-  'collector.word': 'Word / Sentence',
-  'collector.fill': 'Fill in the Blanks',
-  'collector.dialogue': 'Dialogue',
-  'collector.role': 'Role-play',
-  'collector.3q5a': 'Questions & Answers',
-  'collector.picture': 'Picture Description',
-  'collector.read': 'Reading',
-};
+import { questionTypeKey } from '../i18n/questionTypeLabels';
 export interface AnswerPreviewEntry {
   id: string;
   number: string;
@@ -19,6 +9,7 @@ export interface AnswerPreviewEntry {
 export interface AnswerPreviewGroup {
   id: string;
   structureType: string;
+  /** Translation key; localized only by the consuming UI. */
   label: string;
   numberLabel?: string;
   isMultipleChoice: boolean;
@@ -39,7 +30,7 @@ export function selectAnswerPreview(paper: Paper): AnswerPreviewGroup[] {
     return {
       id,
       structureType: group.kind,
-      label: PREVIEW_TYPE_LABELS[group.kind] ?? 'Question Group',
+      label: questionTypeKey(group.kind),
       numberLabel: entries.length
         ? entries.length === 1
           ? '1'

@@ -130,6 +130,7 @@ try {
     errors = [],
     remote = [];
   await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'languages', { configurable: true, value: ['en-US'] });
     globalThis.activeMediaURLs = new Set();
     const make = URL.createObjectURL.bind(URL),
       release = URL.revokeObjectURL.bind(URL);

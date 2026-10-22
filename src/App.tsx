@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBank } from './hooks/useBank';
 import { useTheme } from './hooks/useTheme';
 import { ImportScreen } from './components/ImportScreen';
@@ -7,12 +8,16 @@ import { Navigation } from './components/Navigation';
 import { Reader } from './components/Reader';
 import { Warnings } from './components/Warnings';
 import { Icon } from './components/Icon';
-import { questionKindLabel, type Paper } from './types';
+import type { Paper } from './types';
 import { Toast } from './components/Toast';
 import { downloadPaper } from './core/exporter';
 import { usePresence } from './hooks/useMotion';
 import { AnswerPreview } from './components/AnswerPreview';
+import { LanguageSettings } from './components/LanguageSettings';
+import { questionTypeKey } from './i18n/questionTypeLabels';
 export default function App() {
+  const { t, i18n } = useTranslation();
+  const numbers = new Intl.NumberFormat(i18n.resolvedLanguage);
   const state = useBank(),
     { theme, setTheme } = useTheme();
   const [paperKey, setPaperKey] = useState<string | null>(null),
@@ -20,7 +25,7 @@ export default function App() {
     [screen, setScreen] = useState<'papers' | 'questions' | 'reading'>('papers'),
     [collapsed, setCollapsed] = useState(false),
     [settings, setSettings] = useState(false),
-    [toast, setToast] = useState('');
+    [toastKey, setToastKey] = useState('');
   const settingsPresent = usePresence(settings, 'overlay');
   const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 720px)').matches);
   useEffect(() => {
@@ -49,10 +54,10 @@ export default function App() {
     scrolls.current.clear();
   }, [bank]);
   useEffect(() => {
-    if (!toast) return;
-    const id = setTimeout(() => setToast(''), 4000);
+    if (!toastKey) return;
+    const id = setTimeout(() => setToastKey(''), 4000);
     return () => clearTimeout(id);
-  }, [toast]);
+  }, [toastKey]);
   useEffect(() => {
     if (!settings) return;
     const onKey = (e: KeyboardEvent) => {
@@ -93,9 +98,9 @@ export default function App() {
     if (!paper) return;
     try {
       downloadPaper(paper.id, paper.questions);
-      setToast('Paper export ready. Your browser will save the file.');
+      setToastKey('export.ready');
     } catch {
-      setToast('Export failed. Please try again.');
+      setToastKey('export.failed');
     }
   };
   return (
@@ -108,7 +113,7 @@ export default function App() {
           {bank && (
             <button
               className="icon-button sidebar-toggle"
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label={t(collapsed ? 'header.expandSidebar' : 'header.collapseSidebar')}
               onClick={() => setCollapsed(!collapsed)}
             >
               <Icon name="sidebar" />
@@ -121,12 +126,12 @@ export default function App() {
             href="https://github.com/Steven-w65/ETS-Viewer-web"
             target="_blank"
             rel="noopener noreferrer"
-            title="View on GitHub"
-            aria-label="View on GitHub"
+            title={t('header.github')}
+            aria-label={t('header.github')}
           >
             <Icon name="github" size={18} />
           </a>
-          <span className="app-tag">WEB</span>
+          <span className="app-tag">{t('header.web')}</span>
         </div>
         <div className="header-actions">
           {bank && (
@@ -145,7 +150,7 @@ export default function App() {
               onClick={() => (settings ? dismissSettings() : setSettings(true))}
             >
               <Icon name="settings" size={17} />
-              <span>Settings</span>
+              <span>{t('settings.title')}</span>
             </button>
             {settingsPresent && (
               <div
@@ -154,7 +159,8 @@ export default function App() {
                 aria-hidden={!settings}
                 inert={!settings}
               >
-                <p>Appearance</p>
+                <LanguageSettings />
+                <p>{t('settings.appearance')}</p>
                 {(['system', 'light', 'dark'] as const).map((mode) => (
                   <label key={mode}>
                     <input
@@ -164,11 +170,11 @@ export default function App() {
                       checked={theme === mode}
                       onChange={() => setTheme(mode)}
                     />
-                    <span>{mode[0].toUpperCase() + mode.slice(1)}</span>
+                    <span>{t('settings.theme.' + mode)}</span>
                     {theme === mode && <Icon name="check" size={16} />}
                   </label>
                 ))}
-                <small>Only your appearance preference is saved.</small>
+                <small>{t('settings.preferencesHelp')}</small>
               </div>
             )}
           </div>
@@ -179,6 +185,7 @@ export default function App() {
           onFolder={state.importFolder}
           onZip={state.importZip}
           error={state.error}
+          errorDescriptor={state.errorDescriptor}
           progress={state.progress}
           onCancel={state.cancel}
         />
@@ -203,7 +210,7 @@ export default function App() {
                   <div className="reading-heading">
                     <button
                       className="icon-button mobile-back"
-                      aria-label="Back to question list"
+                      aria-label={t('navigation.backToQuestions')}
                       onClick={() => setScreen('questions')}
                     >
                       <Icon name="arrow" />
@@ -212,21 +219,21 @@ export default function App() {
                       <div className="breadcrumb">
                         {paper.id}
                         <span>/</span>
-                        {questionKindLabel(question)}
+                        {t(questionTypeKey(question.kind))}
                       </div>
-                      <h1>Question {question.id}</h1>
+                      <h1>{t('header.question', { id: question.id })}</h1>
                     </div>
                   </div>
                   <div className="paper-actions">
                     <AnswerPreview key={paper.key} paper={paper} />
                     <button
                       className="export-button"
-                      aria-label="Export Paper"
-                      title="Export Paper"
+                      aria-label={t('export.paper')}
+                      title={t('export.paper')}
                       onClick={exportPaper}
                     >
                       <Icon name="download" size={16} />
-                      <span>Export Paper</span>
+                      <span>{t('export.paper')}</span>
                     </button>
                   </div>
                 </div>
@@ -252,39 +259,41 @@ export default function App() {
                   <div className="overview-symbol">
                     <Icon name="folder" size={20} />
                   </div>
-                  <h1>{bank.papers.length ? 'Select a paper' : 'No Exams Found'}</h1>
+                  <h1>{t(bank.papers.length ? 'statistics.selectPaper' : 'statistics.noExams')}</h1>
                   <p>
-                    {bank.papers.length
-                      ? 'Choose a paper from the sidebar to view answers.'
-                      : 'No supported ETS papers were found. Review the import warnings or select another bank.'}
+                    {t(bank.papers.length ? 'statistics.selectHelp' : 'statistics.noExamsHelp')}
                   </p>
                   <div className="bank-name">{bank.name}</div>
                   <div className="stats">
                     <div>
-                      <strong>{bank.papers.length}</strong>
-                      <span>Papers</span>
-                    </div>
-                    <div>
-                      <strong>{bank.papers.reduce((n, p) => n + p.questions.length, 0)}</strong>
-                      <span>Question groups</span>
+                      <strong>{numbers.format(bank.papers.length)}</strong>
+                      <span>{t('statistics.papers')}</span>
                     </div>
                     <div>
                       <strong>
-                        {bank.papers.reduce(
-                          (n, p) => n + p.questions.reduce((m, q) => m + q.parts.length, 0),
-                          0,
+                        {numbers.format(bank.papers.reduce((n, p) => n + p.questions.length, 0))}
+                      </strong>
+                      <span>{t('statistics.questionGroups')}</span>
+                    </div>
+                    <div>
+                      <strong>
+                        {numbers.format(
+                          bank.papers.reduce(
+                            (n, p) => n + p.questions.reduce((m, q) => m + q.parts.length, 0),
+                            0,
+                          ),
                         )}
                       </strong>
-                      <span>Sub-questions</span>
+                      <span>{t('statistics.subQuestions')}</span>
                     </div>
                   </div>
                   <p className="overview-note">
                     <Icon name="shield" size={16} />
-                    Available for this session. Refreshing clears your bank.
+                    {t('statistics.sessionOnly')}
                   </p>
                   {!bank.papers.length && (
                     <button className="outlined-button" onClick={state.changeBank}>
-                      Change Bank
+                      {t('navigation.changeBank')}
                     </button>
                   )}
                 </div>
@@ -292,11 +301,11 @@ export default function App() {
             )}
           </main>
           <div className="mobile-bank-notes">
-            {!bank.papers.length && <p>No Exams Found. No supported ETS papers were found.</p>}
+            {!bank.papers.length && <p>{t('statistics.noExamsMobile')}</p>}
           </div>
         </div>
       )}
-      <Toast message={toast} />
+      <Toast message={toastKey ? t(toastKey) : ''} />
     </div>
   );
 }

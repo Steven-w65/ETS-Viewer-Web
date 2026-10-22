@@ -153,6 +153,7 @@ try {
     errors = [],
     remote = [];
   await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'languages', { configurable: true, value: ['en-US'] });
     globalThis.previewURLs = { created: 0, revoked: 0, pauses: 0 };
     const make = URL.createObjectURL.bind(URL),
       revoke = URL.revokeObjectURL.bind(URL),

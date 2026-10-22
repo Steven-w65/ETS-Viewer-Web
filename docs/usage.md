@@ -73,6 +73,12 @@ Changing groups resets reading scroll and card expansion; resizing preserves exp
 Open **Settings** to choose System, Light, or Dark. System is the default. Transitions
 respect reduced-motion preferences.
 
+Settings → **Language** defaults to **Auto (Browser language)**. Choose any listed
+language to switch immediately; your open bank, selected questions and cards remain
+in place. Returning to Auto follows the browser's ordered language preferences.
+Only available translation packs appear in the selector. Imported content and text
+exports retain their original language regardless of the interface preference.
+
 ### Supported question formats
 
 | Format                | Collector            |
@@ -133,7 +139,7 @@ exists. Your browser chooses the save destination; source files remain unchanged
 ## Privacy and validation
 
 Imported files and diagnostics remain in browser memory for the current session.
-**Refreshing clears the bank.** Only the appearance preference is saved in `localStorage`.
+**Refreshing clears the bank.** Only language and appearance preferences are saved in `localStorage`.
 The app has no accounts, backend, uploads, analytics, persistent bank restoration,
 IndexedDB storage, or service worker cache.
 

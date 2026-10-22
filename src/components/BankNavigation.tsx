@@ -1,6 +1,7 @@
-import type { Bank, Paper } from '../types';
-import { questionKindLabel } from '../types';
-import { questionTitle } from '../core/parser';
+import type { Bank, Paper, Question } from '../types';
+import { useTranslation } from 'react-i18next';
+import { plainText } from '../core/markup';
+import { questionTypeKey } from '../i18n/questionTypeLabels';
 import { Icon } from './Icon';
 import type { RefObject } from 'react';
 import { validTimestamp } from '../core/dates';
@@ -27,10 +28,22 @@ export function BankNavigation({
   onScroll: (top: number) => void;
   hidden?: boolean;
 }) {
+  const { t, i18n } = useTranslation();
+  const numbers = new Intl.NumberFormat(i18n.resolvedLanguage);
+  const groupCount = (count: number, key: string) =>
+    t(key, { count, formattedCount: numbers.format(count) });
+  const preview = (q: Question) =>
+    plainText(
+      q.displayTitle ||
+        q.topic ||
+        q.parts.find((part) => part.prompt || part.context)?.prompt ||
+        q.parts.find((part) => part.prompt || part.context)?.context ||
+        q.context,
+    ) || t(questionTypeKey(q.kind));
   return (
     <aside
       className="sidebar"
-      aria-label={paper ? 'Questions within paper' : 'Paper list'}
+      aria-label={t(paper ? 'navigation.questionsWithinPaper' : 'navigation.paperList')}
       aria-hidden={hidden || undefined}
       inert={hidden}
     >
@@ -39,17 +52,18 @@ export function BankNavigation({
           <>
             <button className="back-button" onClick={onBack}>
               <Icon name="arrow" size={16} />
-              All Papers
+              {t('navigation.allPapers')}
             </button>
             <h2 title={paper.id}>{paper.id}</h2>
-            <p>{paper.questions.length} question groups</p>
+            <p>{groupCount(paper.questions.length, 'navigation.questionGroupCount')}</p>
           </>
         ) : (
           <>
             <h2>
-              All Papers<span className="badge">{bank.papers.length}</span>
+              {t('navigation.allPapers')}
+              <span className="badge">{numbers.format(bank.papers.length)}</span>
             </h2>
-            <p>Select a paper to explore</p>
+            <p>{t('navigation.selectPaper')}</p>
           </>
         )}
       </div>
@@ -69,9 +83,9 @@ export function BankNavigation({
               >
                 <span className="row-top">
                   <strong>{q.id}</strong>
-                  <span>{questionKindLabel(q)}</span>
+                  <span>{t(questionTypeKey(q.kind))}</span>
                 </span>
-                <span className="row-preview">{questionTitle(q).slice(0, 240)}</span>
+                <span className="row-preview">{preview(q).slice(0, 240)}</span>
               </button>
             ))
           : bank.papers.map((p) => {
@@ -82,12 +96,12 @@ export function BankNavigation({
                   <span>
                     <strong>{p.id}</strong>
                     <small>
-                      {p.questions.length} groups
+                      {groupCount(p.questions.length, 'navigation.groupCount')}
                       {modified !== null && (
                         <>
                           {' '}
                           ·{' '}
-                          {new Date(modified).toLocaleDateString('en-US', {
+                          {new Date(modified).toLocaleDateString(i18n.resolvedLanguage, {
                             month: 'short',
                             day: 'numeric',
                             year: 'numeric',
@@ -100,7 +114,7 @@ export function BankNavigation({
                 </button>
               );
             })}
-        {!bank.papers.length && <p className="list-empty">No supported papers found.</p>}
+        {!bank.papers.length && <p className="list-empty">{t('navigation.noPapers')}</p>}
       </div>
       <div className="sidebar-footer">
         <p title={bank.name}>
@@ -109,9 +123,9 @@ export function BankNavigation({
         </p>
         <button className="change-button" onClick={onChange}>
           <Icon name="folder" size={16} />
-          Change Bank
+          {t('navigation.changeBank')}
         </button>
-        <small>Local files · This session only</small>
+        <small>{t('navigation.sessionOnly')}</small>
       </div>
     </aside>
   );

@@ -1,25 +1,61 @@
-# Verification — modular parsing, local media, UI motion and answer preview, 2026-10-22
+# Verification — parsing, media, UI motion, preview and internationalization, 2026-10-22
 
 ## Executed checks
 
-| Check                             | Result                                                                                                          |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Unit/component tests              | 230 passed in 29 files, including media, welcome help, warnings, motion, folder dates and answer preview        |
-| TypeScript strict check           | Passed as part of `npm run build`                                                                               |
-| Vite production build             | Passed; static assets and a dedicated import worker generated                                                   |
-| Edge 155.0.4283.62                | 49 UI assertions passed; prior 32 media checks include actual synthetic MP3 and H.264 MP4 playback, MP3 seeking |
-| Playwright WebKit 27.2 on Windows | 49 UI assertions passed; prior 19 media checks verify fallbacks because native MP3/MP4 is unavailable           |
-| Playwright Firefox 157            | Could not launch (`spawn UNKNOWN` in this run); browser behavior unverified                                     |
-| Welcome folder-location guide     | 34 Chromium and 32 WebKit checks passed; native clipboard copy/read verified in Chromium for both paths         |
-| Detailed UI motion                | 45 checks per engine passed in Edge and WebKit, including intermediate frames, reversals and dynamic height     |
-| Authorized real-bank regression   | 55 groups, 140 sub-questions, 1,744 stored answers; 5 papers, 795 scanned files                                 |
-| Desktop integrity                 | 188 baseline source files checked by SHA-256; 0 changed                                                         |
+| Check                             | Result                                                                                                                         |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Unit/component tests              | 272 passed in 35 files, including 42 internationalization tests and registry-driven resource validation                        |
+| TypeScript strict check           | Passed as part of `npm run build`                                                                                              |
+| Vite production build             | Passed; static assets and a dedicated import worker generated                                                                  |
+| Edge 155.0.4283.62                | 49 UI assertions passed; prior 32 media checks include actual synthetic MP3 and H.264 MP4 playback, MP3 seeking                |
+| Playwright WebKit 27.2 on Windows | 49 UI assertions passed; prior 19 media checks verify fallbacks because native MP3/MP4 is unavailable                          |
+| Playwright Firefox 157            | Could not launch (`spawn UNKNOWN` in this run); browser behavior unverified                                                    |
+| Welcome folder-location guide     | 34 Chromium and 32 WebKit checks passed; native clipboard copy/read verified in Chromium for both paths                        |
+| Detailed UI motion                | 45 checks per engine passed in Edge and WebKit, including intermediate frames, reversals and dynamic height                    |
+| Authorized real-bank regression   | 55 groups, 140 sub-questions, 1,744 stored answers; 5 papers, 795 scanned files                                                |
+| Desktop integrity                 | 188 baseline source files checked by SHA-256; 0 changed                                                                        |
+| Internationalization              | 53 Edge and 51 Windows WebKit checks; Auto/manual switching, persistence, state/media continuity, paths and export-byte parity |
 
 The global npm installation on this machine lacks `lru-cache`; project scripts were
-executed with the existing isolated npm copy. No application dependency was added.
-The earlier clean installation/lockfile validation
-remains documented in project history; no fresh dependency installation was required
-for this implementation. `test:media` was added as a verification script.
+executed with the existing isolated npm copy. This implementation installed the
+three requested libraries: i18next 26.5.5, react-i18next 17.1.1 and
+i18next-browser-languagedetector 8.2.1, using the existing npm lockfile.
+The earlier clean installation/lockfile validation remains documented in project
+history; the dependency changes for this task are limited to those three libraries.
+`test:i18n` validates all registered translation packs
+and localization behavior; the media script remains available.
+
+## Internationalization verification
+
+The [i18n guide](i18n.md) documents the registry, ordered canonical/script-aware
+matching, exact-code precedence over aliases, Auto/manual persistence, flat resource
+keys, and exact steps to add a locale. All authored UI now uses i18next; source data
+and existing English text-export semantics remain independent of the UI language.
+
+The six i18n test files cover arbitrary future locales, real detector preferences,
+stale cache isolation, blocked storage, ordinary/plural resource-key validation,
+per-variant placeholders, French selector registration, translated diagnostics,
+exact copied paths, source content, counts, open dialogs/Settings, focus, expanded
+cards, scroll, and stable playing audio/video nodes. Final independent review found
+two future-locale defects (alias precedence and ordinary-key validation); both were
+reproduced RED and fixed GREEN before the final 272-test suite/build passed.
+
+Production-browser checks pass 53 assertions in Edge 155.0.4283.62 and 51 in Windows
+WebKit 27.2. They cover automatic detection with ordered/script-sensitive language
+lists, manual overrides and reloads, ignored stale detector caches, blocked storage,
+dynamic language selection, metadata, current bank/Reader/modal preservation, exact
+Android clipboard copy in Edge, local preview numbering, identical English/Chinese
+export bytes, theme independence and 320/390px layouts. Source files are never sent
+to a translation service; the tests observe no external requests. Synthetic i18n
+screenshots are stored only under ignored `.qa/i18n-browser/`.
+
+Existing English-text browser fixtures now explicitly set their browser-language
+list to English. Before that correction, Auto correctly selected this host's
+Chinese preferences and the old English selectors failed. Production detection
+was preserved. Firefox was attempted but failed to launch with `spawn UNKNOWN`.
+No physical Android/iOS device, macOS Safari or screen-reader test is claimed.
+Windows WebKit does not certify native MP3/MP4 decoding; its 19 media assertions
+exercise accurate fallbacks and cleanup, while Edge's 32 checks play actual media.
 
 ## Parser and import coverage
 

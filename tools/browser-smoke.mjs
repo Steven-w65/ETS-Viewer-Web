@@ -247,6 +247,7 @@ try {
     errors = [],
     remote = [];
   await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'languages', { configurable: true, value: ['en-US'] });
     globalThis.imageURLs = new Set();
     const create = URL.createObjectURL.bind(URL),
       revoke = URL.revokeObjectURL.bind(URL);
@@ -507,6 +508,9 @@ try {
     hasTouch: true,
     deviceScaleFactor: 1,
     colorScheme: 'light',
+  });
+  await mobile.addInitScript(() => {
+    Object.defineProperty(navigator, 'languages', { configurable: true, value: ['en-US'] });
   });
   const phone = await mobile.newPage();
   await phone.goto(base);

@@ -1,11 +1,13 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import type { Paper } from '../types';
 import { previewAnswerText, selectAnswerPreview } from '../core/answerPreview';
 import { usePresence } from '../hooks/useMotion';
 import { Icon } from './Icon';
 
 export function AnswerPreview({ paper }: { paper: Paper }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const present = usePresence(open, 'overlay');
   const trigger = useRef<HTMLButtonElement>(null),
@@ -46,14 +48,14 @@ export function AnswerPreview({ paper }: { paper: Paper }) {
         type="button"
         ref={trigger}
         className="export-button preview-button"
-        aria-label="Preview Answers"
+        aria-label={t('preview.open')}
         aria-haspopup="dialog"
         aria-controls={id}
-        title={`Preview all reference answers in ${paper.title || paper.id}`}
+        title={t('preview.openDescription', { paper: paper.title || paper.id })}
         onClick={() => setOpen(true)}
       >
         <Icon name="eye" size={16} />
-        <span>Preview Answers</span>
+        <span>{t('preview.open')}</span>
       </button>
       {createPortal(
         <dialog
@@ -79,15 +81,15 @@ export function AnswerPreview({ paper }: { paper: Paper }) {
         >
           <div className="answer-preview-header">
             <div>
-              <h2 id={id + '-title'}>Answer Preview</h2>
+              <h2 id={id + '-title'}>{t('preview.title')}</h2>
               <p>{paper.title || paper.id}</p>
             </div>
             <button
               type="button"
               className="icon-button"
               ref={close}
-              aria-label="Close answer preview"
-              title="Close"
+              aria-label={t('preview.close')}
+              title={t('common.close')}
               onClick={() => setOpen(false)}
             >
               <Icon name="close" />
@@ -98,9 +100,9 @@ export function AnswerPreview({ paper }: { paper: Paper }) {
             className="answer-preview-body"
             tabIndex={0}
             role="region"
-            aria-label="Paper answers"
+            aria-label={t('preview.region')}
           >
-            {!groups.length && <p className="preview-empty">No answers available</p>}
+            {!groups.length && <p className="preview-empty">{t('preview.empty')}</p>}
             {groups.map((group, index) => (
               <section
                 className="preview-group"
@@ -108,10 +110,10 @@ export function AnswerPreview({ paper }: { paper: Paper }) {
                 aria-labelledby={id + '-group-' + index}
               >
                 <h3 id={id + '-group-' + index}>
-                  {group.label}
+                  {t(group.label)}
                   {group.numberLabel && <> · {group.numberLabel}</>}
                 </h3>
-                {!group.entries.length && <p className="preview-empty">No answers available</p>}
+                {!group.entries.length && <p className="preview-empty">{t('preview.empty')}</p>}
                 <div className={group.isMultipleChoice ? 'preview-choices' : 'preview-text-list'}>
                   {group.entries.map((entry) => (
                     <div className="preview-entry" key={entry.id}>

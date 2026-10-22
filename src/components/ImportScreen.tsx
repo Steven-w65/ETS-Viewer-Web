@@ -1,15 +1,27 @@
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Progress } from '../types';
+import { importErrorMessage, importPhaseKey, type ImportMessage } from '../i18n/importMessages';
 import { Icon } from './Icon';
 import { FolderLocations } from './FolderLocations';
 interface Props {
   onFolder: (files: File[]) => void;
   onZip: (file: File) => void;
   error?: string;
+  errorDescriptor?: ImportMessage | null;
   progress?: Progress | null;
   onCancel?: () => void;
 }
-export function ImportScreen({ onFolder, onZip, error, progress, onCancel }: Props) {
+export function ImportScreen({
+  onFolder,
+  onZip,
+  error,
+  errorDescriptor,
+  progress,
+  onCancel,
+}: Props) {
+  const { t, i18n } = useTranslation();
+  const failure = errorDescriptor ?? (error ? importErrorMessage(error) : null);
   const folder = useRef<HTMLInputElement>(null),
     zip = useRef<HTMLInputElement>(null);
   return (
@@ -19,7 +31,7 @@ export function ImportScreen({ onFolder, onZip, error, progress, onCancel }: Pro
           <Icon name="book" size={26} />
         </div>
         <h1>ETS Viewer</h1>
-        <p className="welcome-description">Open a local question bank to view reference answers.</p>
+        <p className="welcome-description">{t('welcome.description')}</p>
         <div className="import-actions">
           <button
             className="primary-button"
@@ -27,7 +39,7 @@ export function ImportScreen({ onFolder, onZip, error, progress, onCancel }: Pro
             disabled={!!progress}
           >
             <Icon name="folder" />
-            Select Folder
+            {t('welcome.selectFolder')}
           </button>
           <button
             className="outlined-button"
@@ -35,7 +47,7 @@ export function ImportScreen({ onFolder, onZip, error, progress, onCancel }: Pro
             disabled={!!progress}
           >
             <Icon name="zip" />
-            Import ZIP
+            {t('welcome.importZip')}
           </button>
         </div>
         <FolderLocations />
@@ -46,7 +58,7 @@ export function ImportScreen({ onFolder, onZip, error, progress, onCancel }: Pro
           }}
           type="file"
           multiple
-          aria-label="Select question-bank folder"
+          aria-label={t('welcome.folderInput')}
           className="file-input"
           onChange={(e) => {
             const files = Array.from(e.currentTarget.files ?? []);
@@ -58,7 +70,7 @@ export function ImportScreen({ onFolder, onZip, error, progress, onCancel }: Pro
           ref={zip}
           type="file"
           accept=".zip,application/zip,application/x-zip-compressed"
-          aria-label="Select question-bank ZIP"
+          aria-label={t('welcome.zipInput')}
           className="file-input"
           onChange={(e) => {
             const f = e.currentTarget.files?.[0];
@@ -69,28 +81,32 @@ export function ImportScreen({ onFolder, onZip, error, progress, onCancel }: Pro
         {progress && (
           <div className="import-progress" role="status" aria-live="polite">
             <p>
-              {progress.phase}
+              {t(importPhaseKey(progress.phase))}
               {progress.total > 0 && (
                 <span>
-                  {progress.completed.toLocaleString()} / {progress.total.toLocaleString()}
+                  {t('import.progressCounts', {
+                    completed: progress.completed.toLocaleString(i18n.resolvedLanguage),
+                    total: progress.total.toLocaleString(i18n.resolvedLanguage),
+                  })}
                 </span>
               )}
             </p>
             <progress
+              aria-label={t('import.progressLabel')}
               max={progress.total || undefined}
               value={progress.total ? progress.completed : undefined}
             />
             <button className="text-button" onClick={onCancel}>
-              Cancel import
+              {t('import.cancel')}
             </button>
           </div>
         )}
-        {error && (
+        {failure && (
           <div className="inline-error" role="alert">
-            {error}
+            {t(failure.key, failure.params ?? {})}
           </div>
         )}
-        <p className="privacy">Files stay on your device.</p>
+        <p className="privacy">{t('welcome.privacy')}</p>
       </div>
     </main>
   );

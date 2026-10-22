@@ -214,6 +214,9 @@ h3 {
   flex-shrink: 0;
 }
 .settings-menu {
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 82px);
+  overflow-y: auto;
   opacity: 1;
   transition: opacity var(--motion-duration-overlay) var(--motion-ease-standard);
   position: absolute;
@@ -268,6 +271,38 @@ h3 {
   border-top: 1px solid var(--border);
   padding: 10px 9px 3px;
   margin-top: 4px;
+}
+.language-setting {
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+  padding-top: 4px;
+  min-width: 0;
+}
+.language-setting label {
+  align-items: stretch;
+  flex-direction: column;
+  font-size: 12px;
+  cursor: default;
+}
+.language-setting select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding: 7px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  color: var(--text);
+  background: var(--surface);
+  font: inherit;
+}
+.language-setting select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.language-setting small {
+  border-top: 0;
+  margin-top: 0;
+  overflow-wrap: anywhere;
 }
 .import-screen {
   flex: 1;

@@ -95,6 +95,9 @@ export interface Issue {
   /** Imported virtual source/JSON path, never an operating-system absolute path. */
   path: string;
   message: string;
+  /** Optional structured UI message; original diagnostic text stays available locally. */
+  messageKey?: string;
+  messageParams?: Record<string, string | number>;
   code?: string;
   severity?: 'info' | 'warning' | 'error';
   structureType?: string;

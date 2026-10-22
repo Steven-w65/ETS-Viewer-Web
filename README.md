@@ -117,7 +117,7 @@ Question-bank files are processed in your browser. The app has **no accounts, ba
 uploads, or analytics**. Imported markup is filtered, and media resolves only within the
 question's local files.
 
-**Refreshing clears your bank.** Only your appearance preference is saved. **Change Bank**
+**Refreshing clears your bank.** Only your language and appearance preferences are saved. **Change Bank**
 clears the current session and releases its media resources. Source files remain unchanged.
 Read about [file validation and resource limits](docs/usage.md#privacy-and-validation).
 
@@ -127,13 +127,14 @@ The app uses React 19, TypeScript, and Vite, with a module worker for imports an
 The production build contains independent static assets; Node.js is needed to develop
 and build the app.
 
-| Command              | Purpose                                                     |
-| :------------------- | :---------------------------------------------------------- |
-| `npm run dev`        | Start the development server.                               |
-| `npm run build`      | Check TypeScript and write the production build to `dist/`. |
-| `npm run preview`    | Serve the production build locally.                         |
-| `npm test`           | Run unit and component tests.                               |
-| `npm run test:watch` | Watch files and rerun tests during development.             |
+| Command              | Purpose                                                              |
+| :------------------- | :------------------------------------------------------------------- |
+| `npm run dev`        | Start the development server.                                        |
+| `npm run build`      | Check TypeScript and write the production build to `dist/`.          |
+| `npm run preview`    | Serve the production build locally.                                  |
+| `npm test`           | Run unit and component tests.                                        |
+| `npm run test:watch` | Watch files and rerun tests during development.                      |
+| `npm run test:i18n`  | Validate registered translation resources and localization behavior. |
 
 Serve `dist/` with a static HTTP server. Relative asset URLs support hosting under a
 subdirectory. Use HTTP rather than opening `dist/index.html` with `file://`, where browsers
@@ -187,4 +188,5 @@ executed checks and physical-device limitations.
 | [Local media](docs/media-handling.md)              | Supported references, scoped resolution, native playback, and resource ownership.            |
 | [Answer preview](docs/answer-preview.md)           | Source order, numbering, text formatting, and first-reference behavior.                      |
 | [UI motion](docs/ui-motion.md)                     | Shared transitions, reduced motion, and media lifecycle behavior.                            |
+| [Internationalization](docs/i18n.md)               | Locale registry, Auto/manual language preferences, and adding translations.                  |
 | [Verification](docs/verification.md)               | Test evidence, desktop parity, environment notes, and known limitations.                     |

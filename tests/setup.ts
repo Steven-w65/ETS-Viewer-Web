@@ -1,6 +1,14 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
-import { afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
+import i18n, { languagePreferences } from '../src/i18n';
+
+beforeEach(() => {
+  void languagePreferences.setPreference('en');
+});
+afterEach(() => {
+  void i18n.changeLanguage('en');
+});
 afterEach(cleanup);
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
