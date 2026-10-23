@@ -80,7 +80,7 @@ it('switches an open Settings menu live while keeping theme, statistics and impo
   expect(paperRow).toHaveTextContent('2 个题组 · 2026年10月19日');
   expect(screen.getByRole('link', { name: '在 GitHub 上查看' })).toHaveAttribute(
     'href',
-    'https://github.com/Steven-w65/ETS-Viewer-web',
+    'https://github.com/Steven-w65/ETS-Viewer-Web',
   );
   expect(screen.getByRole('complementary', { name: '试卷列表' })).toBeVisible();
   expect(bank).toEqual(before);

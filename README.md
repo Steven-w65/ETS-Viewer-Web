@@ -21,8 +21,8 @@ Open a folder or ZIP. Read stored reference answers. Preview and export a whole 
 You'll need **Node.js 22.12 or later** and **npm**.
 
 ```sh
-git clone https://github.com/Steven-w65/ETS-Viewer-web.git
-cd ETS-Viewer-web
+git clone https://github.com/Steven-w65/ETS-Viewer-Web.git
+cd ETS-Viewer-Web
 npm ci
 npm run dev
 ```

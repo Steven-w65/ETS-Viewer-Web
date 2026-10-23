@@ -123,7 +123,7 @@ export default function App() {
           <span>ETS Viewer</span>
           <a
             className="github-link"
-            href="https://github.com/Steven-w65/ETS-Viewer-web"
+            href="https://github.com/Steven-w65/ETS-Viewer-Web"
             target="_blank"
             rel="noopener noreferrer"
             title={t('header.github')}
