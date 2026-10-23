@@ -1020,6 +1020,7 @@ progress {
   border-radius: 8px;
   gap: 12px;
   justify-content: flex-start;
+  border-bottom: 1px solid transparent;
 }
 .collapse-label {
   flex: 1;
@@ -1041,8 +1042,17 @@ progress {
 .collapse-toggle svg {
   color: var(--muted);
 }
+.collapse-toggle > svg:last-child {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+}
+.collapse-toggle:focus-visible {
+  /* Keep the outline inside the clipped card; this changes paint, not layout. */
+  outline-offset: -3px;
+}
 .is-open > .collapse-toggle {
-  border-bottom: 1px solid var(--border);
+  border-bottom-color: var(--border);
   border-radius: 0;
 }
 .count-label {

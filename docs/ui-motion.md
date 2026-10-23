@@ -44,13 +44,13 @@ motion removes transitions and completes pending retained exits.
 
 ## Reproducible verification
 
-| Check | Result |
-| --- | --- |
-| Full Vitest suite | 196 tests passed in 26 files |
-| Strict TypeScript / production build | Passed |
-| Edge 155.0.4283.62 | 45 motion, 47 UI, 32 media, 34 folder guide, 45 warning checks passed |
-| Windows WebKit 27.2 | 45 motion, 47 UI, 19 media fallback, 32 folder guide, 45 warning checks passed |
-| Original desktop repository | 188 baseline hashes checked; 0 changed |
+| Check                                | Result                                                                         |
+| ------------------------------------ | ------------------------------------------------------------------------------ |
+| Full Vitest suite                    | 196 tests passed in 26 files                                                   |
+| Strict TypeScript / production build | Passed                                                                         |
+| Edge 155.0.4283.62                   | 45 motion, 47 UI, 32 media, 34 folder guide, 45 warning checks passed          |
+| Windows WebKit 27.2                  | 45 motion, 47 UI, 19 media fallback, 32 folder guide, 45 warning checks passed |
+| Original desktop repository          | 188 baseline hashes checked; 0 changed                                         |
 
 - `tests/motion.test.tsx`: CSS-driven exit lifetime, child identity during reversal,
   live reduced motion, observed intrinsic size, focus, Settings, toast and warning
@@ -83,3 +83,47 @@ Verification changes: `tests/motion.test.tsx`, `tests/extended-reading.test.tsx`
 `tools/browser-smoke.mjs`, `browser-media.mjs`, `browser-warnings.mjs`, settled
 screenshot timing in `browser-folder-locations.mjs`, and this document plus
 `docs/verification.md`. No parser, importer, exporter or media infrastructure changed.
+
+## Accordion header stability — 2026-10-23
+
+A browser regression reproduced a 0.5px upward movement of the Additional Reference
+Answers label. The expanded selector added a bottom border from 0px to 1px. In the
+50px header, flex centering then positioned the text 0.5px higher. Question and
+Shared Material headers with preview text instead gained 1px in total height.
+Padding, typography, transforms and scroll position did not change. The tested
+scroll container also retained its width when the expanded answer introduced
+overflow, so scrollbar appearance was not the reproduced cause.
+
+The shared `.collapse-toggle` now always reserves a 1px transparent bottom border.
+Expansion changes its color only. The chevron has an explicit non-shrinking 16px
+SVG layout box and remains the only transformed header element. The 200ms content
+height/opacity and chevron transitions are preserved. No text positioning offsets
+or state-dependent header dimensions are used.
+
+The existing keyboard outline was also clipped by the card's `overflow: hidden`.
+Its focus-visible outline now paints inside the header. This affects focus paint
+only, without changing the label, padding, border geometry or animation.
+
+`node tools/browser-accordion.mjs` runs actual pointer, emulated touch, Enter and
+Space interactions against an imported synthetic bank. It samples text-glyph and
+header bounds on every animation frame, checks intermediate content heights and
+matching 200ms chevron timing, and verifies focus containment and reduced motion.
+The matrix includes 1280px, 390px and 320px widths, Light/Dark, English/Simplified
+Chinese, repeated open/close cycles, all three Reader accordions and an artificially
+extended label at 320px. `ETS_BROWSER_ENGINE=webkit` runs the same matrix in WebKit;
+`ETS_ACCORDION_QUICK=1` runs one layout, and `ETS_ACCORDION_PROBE=1` prints before/after
+diagnostic measurements with temporary hypothesis styles instead of changing files.
+
+The original browser regression failed with the measured 0.5px movement before the
+CSS fix. A separate keyboard check failed for the clipped outline before its fix.
+The complete Vitest suite remains green at 272 tests in 35 files, and strict
+TypeScript plus the production build pass. Edge 155.0.4283.62 and Windows WebKit
+27.2 each passed 1,512 browser assertions across the 12 width/language/theme
+combinations. The maximum measured header-label displacement was 0px in both
+engines. The inset focus ring was also visually inspected after keyboard activation.
+Touch uses emulation; physical Android/iOS devices and macOS Safari are not claimed.
+
+Files for this focused fix: `src/styles/app.css`,
+`tools/browser-accordion.mjs` and this verification note. No React component,
+parser, importer, media, navigation, preview, export, localization or theme logic
+was modified.
